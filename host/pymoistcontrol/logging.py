@@ -7,6 +7,8 @@
 
 from pymoistcontrol.util import *
 
+import cgi
+
 
 def controllerStateName(stateNum):
 	try:
