@@ -21,6 +21,7 @@
 from pymoistcontrol.util import *
 from pymoistcontrol.dayofweek import *
 from pymoistcontrol.bitindicator import *
+from pymoistcontrol.messages import *
 
 
 class PotShortStatusWidget(QWidget):
