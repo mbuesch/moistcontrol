@@ -1,0 +1,382 @@
+#!/usr/bin/env python3
+#
+# Moisture control - Graphical user interface
+#
+# Copyright (c) 2013 Michael Buesch <m@bues.ch>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+
+import sys
+
+if sys.version_info[0] < 3:
+	print("The Python interpreter is too old.")
+	print("PLEASE INSTALL Python 3.x")
+	raw_input("Press enter to exit.")
+	sys.exit(1)
+
+import os
+import cgi
+
+from pymoistcontrol import *
+
+
+class MainWidget(QWidget):
+	"""The central widget inside of the main window."""
+
+	serialConnected = Signal()
+	serialDisconnected = Signal()
+
+	fetchCycle = [
+		"log",
+		"rtc",
+		"pot_state",
+	]
+
+	def __init__(self, parent):
+		"""Class constructor."""
+		QWidget.__init__(self, parent)
+		self.setLayout(QGridLayout(self))
+
+		self.globConfWidget = GlobalConfigWidget(self)
+		self.layout().addWidget(self.globConfWidget, 0, 0)
+
+		self.tabWidget = QTabWidget(self)
+		self.layout().addWidget(self.tabWidget, 0, 1)
+
+		self.potWidgets = []
+		for i in range(MAX_NR_FLOWERPOTS):
+			potWidget = PotWidget(i, self)
+			self.potWidgets.append(potWidget)
+			self.tabWidget.addTab(potWidget,
+					      "Pot %d" % (i + 1))
+		self.setUiEnabled(False)
+
+		self.logWidget = LogWidget(self)
+		self.layout().addWidget(self.logWidget, 1, 0, 1, 2)
+
+		self.connected = False
+		self.pollTimer = QTimer(self)
+		self.pollTimer.setInterval(100)
+		self.pollTimer.setSingleShot(True)
+
+		self.globConfWidget.configChanged.connect(self.__handleGlobConfigChange)
+		self.globConfWidget.rtcEdited.connect(self.__handleRtcEdit)
+		for pot in self.potWidgets:
+			pot.configChanged.connect(self.__handlePotConfigChange)
+			pot.manModeChanged.connect(self.__handleManModeChange)
+		self.pollTimer.timeout.connect(self.__pollTimerEvent)
+
+	def __handleCommError(self, exception):
+		QMessageBox.critical(self,
+				     "Serial communication failed",
+				     "Serial communication failed:\n"
+				     "%s" % str(exception))
+		self.disconnectDev()
+
+	def __handleGlobConfigChange(self):
+		msg = MsgContrConf(flags = 0,
+				   sensor_lowest_value = self.globConfWidget.lowestRawSensorVal(),
+				   sensor_highest_value = self.globConfWidget.highestRawSensorVal())
+		if self.globConfWidget.globalEnableActive():
+			msg.flags |= msg.CONTR_FLG_ENABLE
+		try:
+			self.serial.send(msg)
+		except SerialError as e:
+			self.__handleCommError(e)
+			return
+
+	def __handleRtcEdit(self):
+		dateTime = self.globConfWidget.getRtcDateTime()
+		msg = MsgRtc(second = dateTime.time().second(),
+			     minute = dateTime.time().minute(),
+			     hour = dateTime.time().hour(),
+			     day = dateTime.date().day(),
+			     month = dateTime.date().month(),
+			     year = clamp(dateTime.date().year(), 2000, 2063) - 2000,
+			     day_of_week = dateTime.date().dayOfWeek() - 1)
+		try:
+			self.serial.send(msg)
+		except SerialError as e:
+			self.__handleCommError(e)
+			return
+
+	def __handlePotConfigChange(self, potNumber):
+		pot = self.potWidgets[potNumber]
+		self.globConfWidget.handlePotEnableChange(potNumber,
+							  pot.isEnabled())
+		msg = MsgContrPotConf(pot_number = potNumber,
+				      flags = 0,
+				      min_threshold = pot.getMinThreshold(),
+				      max_threshold = pot.getMaxThreshold(),
+				      start_time = pot.getStartTime(),
+				      end_time = pot.getEndTime(),
+				      dow_on_mask = pot.getDowEnableMask(),
+				      dow_ignoretime_mask = pot.getDowIgnoreTimeMask())
+		if pot.isEnabled():
+			msg.flags |= msg.POT_FLG_ENABLED
+		if pot.loggingEnabled():
+			msg.flags |= msg.POT_FLG_LOG
+		try:
+			self.serial.send(msg)
+		except SerialError as e:
+			self.__handleCommError(e)
+			return
+
+	def __handleManModeChange(self):
+		msg = MsgManMode(force_stop_watering_mask = 0,
+				 valve_manual_mask = 0,
+				 valve_manual_state = 0)
+		for i, pot in enumerate(self.potWidgets):
+			if pot.forceStopWateringActive():
+				msg.force_stop_watering_mask |= 1 << i
+			if pot.forceOpenValveActive():
+				msg.valve_manual_mask |= 1 << i
+				msg.valve_manual_state |= 1 << i
+		try:
+			self.serial.send(msg)
+		except SerialError as e:
+			self.__handleCommError(e)
+			return
+
+	def setUiEnabled(self, enabled = True):
+		self.globConfWidget.setEnabled(enabled)
+		for i in range(self.tabWidget.count()):
+			self.tabWidget.widget(i).setEnabled(enabled)
+
+	def __fetchCycleNext(self):
+		action = self.fetchCycle[self.fetchCycleNumber]
+		try:
+			if action == "log":
+				self.serial.send(MsgLogFetch())
+			elif action == "rtc":
+				self.serial.send(MsgRtcFetch())
+			elif action == "pot_state":
+				self.serial.send(MsgContrPotStateFetch(self.potCycleNumber))
+			else:
+				assert(0)
+		except SerialError as e:
+			self.__handleCommError(e)
+			return
+		self.pollTimer.start()
+
+	def __checkRxMsg(self, msg, expectedType, ignoreErrorCode=False):
+		ok = True
+		if not ignoreErrorCode:
+			if msg.getErrorCode() != Message.COMM_ERR_OK:
+				QMessageBox.critical(self,
+					"Received message: Error",
+					"Received an error: %d" % \
+					msg.getErrorCode())
+				ok = False
+		if ok and\
+		   msg.getType() is not None and\
+		   msg.getType() != expectedType:
+			QMessageBox.critical(self,
+				"Received message: Unexpected type",
+				"Received a message with an unexpected "
+				"type. (got %d, expected %d)" % \
+				(msg.getType(), expectedType))
+			ok = False
+		if not ok:
+			self.disconnectDev()
+		return ok
+
+	def __convertRxMsg(self, msg):
+		msg = Message.fromRawMessage(msg)
+		if not msg:
+			QMessageBox.critical(self, "Communication failed",
+				"Serial communication timeout")
+			self.disconnectDev()
+			return None
+		error = msg.getErrorCode()
+		if error not in (Message.COMM_ERR_OK, Message.COMM_ERR_FAIL):
+			QMessageBox.critical(self, "Communication failed",
+				"Serial communication error: %d" % error)
+			self.disconnectDev()
+			return None
+		return msg
+
+	def __pollTimerEvent(self):
+		try:
+			msg = self.__convertRxMsg(self.serial.poll())
+			if not msg:
+				return
+		except SerialError as e:
+			self.__handleCommError(e)
+			return
+		error = msg.getErrorCode()
+
+		advanceFetchCycle = True
+		action = self.fetchCycle[self.fetchCycleNumber]
+		if action == "log":
+			if self.__checkRxMsg(msg, Message.MSG_LOG,
+					     ignoreErrorCode = True):
+				if error == Message.COMM_ERR_OK:
+					self.logWidget.handleLogMessage(msg)
+					self.logCount += 1
+					if self.logCount < 8:
+						advanceFetchCycle = False
+			if advanceFetchCycle:
+				self.logCount = 0
+		elif action == "rtc":
+			if self.__checkRxMsg(msg, Message.MSG_RTC):
+				self.globConfWidget.handleRtcMessage(msg)
+		elif action == "pot_state":
+			if self.__checkRxMsg(msg, Message.MSG_CONTR_POT_STATE):
+				if msg.pot_number == self.potCycleNumber:
+					self.globConfWidget.handlePotStateMessage(msg)
+					self.potWidgets[self.potCycleNumber].handlePotStateMessage(msg)
+				else:
+					QMessageBox.critical(self,
+						"Pot state message mismatch",
+						"Received pot state message for the"
+						"wrong pot (was %d, expected %d)." % \
+						(msg.pot_number, self.potCycleNumber))
+			self.potCycleNumber += 1
+			if self.potCycleNumber < MAX_NR_FLOWERPOTS:
+				advanceFetchCycle = False
+			else:
+				self.potCycleNumber = 0
+		else:
+			assert(0)
+
+		if advanceFetchCycle:
+			self.fetchCycleNumber += 1
+			if self.fetchCycleNumber >= len(self.fetchCycle):
+				self.fetchCycleNumber = 0
+			self.__fetchCycleNext()
+		else:
+			self.__fetchCycleNext()
+
+	def __initializeDev(self):
+		try:
+			# Get the global configuration from the device
+			msg = self.__convertRxMsg(self.serial.sendSync(MsgContrConfFetch()))
+			self.globConfWidget.handleGlobalConfMessage(msg)
+			# Get the pot configurations from the device
+			for i in range(MAX_NR_FLOWERPOTS):
+				msg = self.__convertRxMsg(self.serial.sendSync(MsgContrPotConfFetch(i)))
+				self.potWidgets[i].handlePotConfMessage(msg)
+			# Reset manual mode
+			msg = MsgManMode(force_stop_watering_mask = 0,
+					 valve_manual_mask = 0,
+					 valve_manual_state = 0)
+			self.serial.send(msg)
+			# Start cyclic data fetching
+			self.__fetchCycleNext()
+		except SerialError as e:
+			self.__handleCommError(e)
+			return False
+		return True
+
+	def isConnected(self):
+		return self.connected
+
+	def connectDev(self, port=None):
+		if self.connected:
+			return
+		if not port:
+			dlg = SerialOpenDialog(self)
+			if dlg.exec_() != QDialog.Accepted:
+				return
+			port = dlg.getSelectedPort()
+		try:
+			self.serial = SerialComm(port, baudrate = 9600,
+						 payloadLen = 12,
+						 debug = True)
+		except SerialError as e:
+			QMessageBox.critical(self, "Cannot connect serial port",
+				"Cannot connect serial port:\n" + str(e))
+			return
+		self.fetchCycleNumber = 0
+		self.potCycleNumber = 0
+		self.logCount = 0
+		self.logWidget.clear()
+		self.setUiEnabled(True)
+		if not self.__initializeDev():
+			return
+		self.connected = True
+		self.serialConnected.emit()
+
+	def disconnectDev(self):
+		self.setUiEnabled(False)
+		self.pollTimer.stop()
+		if self.serial:
+			self.serial.close()
+			self.serial = None
+		if self.connected:
+			self.connected = False
+			self.serialDisconnected.emit()
+
+class MainWindow(QMainWindow):
+	"""The main program window."""
+
+	def __init__(self):
+		"""Class constructor."""
+		QMainWindow.__init__(self)
+		self.setWindowTitle("Flowerpot moisture control")
+
+		mainWidget = MainWidget(self)
+		self.setCentralWidget(mainWidget)
+
+		self.setMenuBar(QMenuBar(self))
+
+		menu = QMenu("&File", self)
+		menu.addAction("&Exit", self.close)
+		self.menuBar().addMenu(menu)
+
+		menu = QMenu("&Device", self)
+		self.connMenuButton = menu.addAction("&Connect", self.connectDev)
+		self.disconnMenuButton = menu.addAction("&Disconnect", self.disconnectDev)
+		self.menuBar().addMenu(menu)
+
+		toolBar = QToolBar(self)
+		self.connToolButton = toolBar.addAction("Connect", self.connectDev)
+		self.disconnToolButton = toolBar.addAction("Disconnect", self.disconnectDev)
+		self.addToolBar(toolBar)
+
+		self.updateConnButtons()
+
+		mainWidget.serialConnected.connect(self.updateConnButtons)
+		mainWidget.serialDisconnected.connect(self.updateConnButtons)
+
+	def updateConnButtons(self):
+		connected = self.centralWidget().isConnected()
+		self.connMenuButton.setEnabled(not connected)
+		self.connToolButton.setEnabled(not connected)
+		self.disconnMenuButton.setEnabled(connected)
+		self.disconnToolButton.setEnabled(connected)
+
+	def connectDev(self, port=None):
+		self.centralWidget().connectDev(port)
+
+	def disconnectDev(self):
+		self.centralWidget().disconnectDev()
+
+# Program entry point
+def main():
+	# Create the main QT application object
+	qApp = QApplication(sys.argv)
+	# Create and show the main window
+	mainWnd = MainWindow()
+	mainWnd.show()
+	if len(sys.argv) >= 2:
+		mainWnd.connectDev(sys.argv[1])
+	# Enter the QT event loop
+	return qApp.exec_()
+
+if __name__ == "__main__":
+	sys.exit(main())

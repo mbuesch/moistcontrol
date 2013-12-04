@@ -1,0 +1,858 @@
+EESchema Schematic File Version 2
+LIBS:power
+LIBS:device
+LIBS:transistors
+LIBS:conn
+LIBS:linear
+LIBS:regul
+LIBS:74xx
+LIBS:cmos4000
+LIBS:adc-dac
+LIBS:memory
+LIBS:xilinx
+LIBS:special
+LIBS:microcontrollers
+LIBS:dsp
+LIBS:microchip
+LIBS:analog_switches
+LIBS:motorola
+LIBS:texas
+LIBS:intel
+LIBS:audio
+LIBS:interface
+LIBS:digital-audio
+LIBS:philips
+LIBS:display
+LIBS:cypress
+LIBS:siliconi
+LIBS:opto
+LIBS:atmel
+LIBS:contrib
+LIBS:valves
+LIBS:rv3029c2
+LIBS:crystalosc
+LIBS:moistcontrol-cache
+EELAYER 27 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 2 2
+Title "moistcontrol - upper board"
+Date "23 nov 2013"
+Rev "1.0"
+Comp "Michael Buesch <m@bues.ch>"
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+Connection ~ 7550 1600
+Connection ~ 6950 1600
+Wire Wire Line
+	7550 1900 7550 1600
+Wire Wire Line
+	7550 1900 7450 1900
+Wire Wire Line
+	8250 3050 8250 2200
+Wire Wire Line
+	8250 6850 8250 6000
+Wire Wire Line
+	8250 6850 3200 6850
+Wire Wire Line
+	8250 4950 8250 4100
+Wire Wire Line
+	8250 4950 3800 4950
+Wire Wire Line
+	4100 4100 6000 4100
+Wire Wire Line
+	7550 1600 7650 1600
+Connection ~ 5800 2200
+Wire Wire Line
+	5800 2200 5800 2600
+Wire Wire Line
+	3500 6000 6000 6000
+Wire Wire Line
+	4400 3050 8250 3050
+Wire Wire Line
+	7050 1900 6950 1900
+Wire Wire Line
+	6950 1900 6950 1600
+Connection ~ 6300 2600
+Wire Wire Line
+	4700 2200 6000 2200
+Wire Wire Line
+	8250 2200 9100 2200
+Connection ~ 9400 2600
+Wire Wire Line
+	10050 1900 10050 1600
+Wire Wire Line
+	10050 1900 10150 1900
+Wire Wire Line
+	8900 2200 8900 2600
+Wire Wire Line
+	9400 2400 9400 2600
+Connection ~ 8900 2200
+Wire Wire Line
+	10750 1600 10650 1600
+Wire Wire Line
+	10550 1900 10650 1900
+Wire Wire Line
+	10650 1900 10650 1600
+Connection ~ 10050 1600
+Connection ~ 10650 1600
+Wire Wire Line
+	9400 2600 9500 2600
+Connection ~ 6300 4500
+Wire Wire Line
+	6950 3500 6950 3800
+Wire Wire Line
+	6950 3800 7050 3800
+Wire Wire Line
+	5800 4100 5800 4500
+Wire Wire Line
+	6300 4300 6300 4500
+Connection ~ 5800 4100
+Wire Wire Line
+	7650 3500 7550 3500
+Wire Wire Line
+	7450 3800 7550 3800
+Wire Wire Line
+	7550 3800 7550 3500
+Connection ~ 6950 3500
+Connection ~ 7550 3500
+Wire Wire Line
+	6300 4500 6400 4500
+Wire Wire Line
+	8250 4100 9100 4100
+Connection ~ 9400 4500
+Wire Wire Line
+	10050 3800 10050 3500
+Wire Wire Line
+	10050 3800 10150 3800
+Wire Wire Line
+	8900 4100 8900 4500
+Wire Wire Line
+	9400 4300 9400 4500
+Connection ~ 8900 4100
+Wire Wire Line
+	10750 3500 10650 3500
+Wire Wire Line
+	10550 3800 10650 3800
+Wire Wire Line
+	10650 3800 10650 3500
+Connection ~ 10050 3500
+Connection ~ 10650 3500
+Wire Wire Line
+	9400 4500 9500 4500
+Connection ~ 6300 6400
+Wire Wire Line
+	6950 5700 6950 5400
+Wire Wire Line
+	6950 5700 7050 5700
+Wire Wire Line
+	5800 6000 5800 6400
+Wire Wire Line
+	6300 6200 6300 6400
+Connection ~ 5800 6000
+Wire Wire Line
+	7650 5400 7550 5400
+Wire Wire Line
+	7450 5700 7550 5700
+Wire Wire Line
+	7550 5700 7550 5400
+Connection ~ 6950 5400
+Connection ~ 7550 5400
+Wire Wire Line
+	6300 6400 6400 6400
+Wire Wire Line
+	8250 6000 9100 6000
+Connection ~ 9400 6400
+Wire Wire Line
+	10050 5400 10050 5700
+Wire Wire Line
+	10050 5700 10150 5700
+Wire Wire Line
+	8900 6000 8900 6400
+Wire Wire Line
+	9400 6200 9400 6400
+Connection ~ 8900 6000
+Wire Wire Line
+	10750 5400 10650 5400
+Wire Wire Line
+	10550 5700 10650 5700
+Wire Wire Line
+	10650 5700 10650 5400
+Connection ~ 10050 5400
+Connection ~ 10650 5400
+Wire Wire Line
+	9400 6400 9500 6400
+Text GLabel 10750 5400 2    60   Input ~ 0
++12V
+$Comp
+L DIODE D7
+U 1 1 514DC4A4
+P 10350 5700
+F 0 "D7" H 10350 5800 40  0000 C CNN
+F 1 "1N4001" H 10350 5600 40  0000 C CNN
+F 2 "" H 10350 5700 60  0001 C CNN
+F 3 "" H 10350 5700 60  0001 C CNN
+	1    10350 5700
+	1    0    0    -1  
+$EndComp
+$Comp
+L INDUCTOR L7
+U 1 1 514DC4A3
+P 10350 5400
+F 0 "L7" V 10300 5400 40  0000 C CNN
+F 1 "valve coil" V 10450 5400 40  0000 C CNN
+F 2 "" H 10350 5400 60  0001 C CNN
+F 3 "" H 10350 5400 60  0001 C CNN
+	1    10350 5400
+	0    -1   -1   0   
+$EndComp
+Text GLabel 9500 6400 2    60   Input ~ 0
+GND
+$Comp
+L R R10
+U 1 1 514DC4A2
+P 9150 6400
+F 0 "R10" V 9230 6400 50  0000 C CNN
+F 1 "10k" V 9150 6400 50  0000 C CNN
+F 2 "" H 9150 6400 60  0001 C CNN
+F 3 "" H 9150 6400 60  0001 C CNN
+	1    9150 6400
+	0    -1   -1   0   
+$EndComp
+$Comp
+L MOS_N Q6
+U 1 1 514DC4A1
+P 9300 6000
+F 0 "Q6" H 9310 6170 60  0000 R CNN
+F 1 "IRF530" H 9310 5850 60  0000 R CNN
+F 2 "" H 9300 6000 60  0001 C CNN
+F 3 "" H 9300 6000 60  0001 C CNN
+	1    9300 6000
+	1    0    0    -1  
+$EndComp
+Text GLabel 7650 5400 2    60   Input ~ 0
++12V
+$Comp
+L DIODE D6
+U 1 1 514DC49E
+P 7250 5700
+F 0 "D6" H 7250 5800 40  0000 C CNN
+F 1 "1N4001" H 7250 5600 40  0000 C CNN
+F 2 "" H 7250 5700 60  0001 C CNN
+F 3 "" H 7250 5700 60  0001 C CNN
+	1    7250 5700
+	1    0    0    -1  
+$EndComp
+$Comp
+L INDUCTOR L6
+U 1 1 514DC49D
+P 7250 5400
+F 0 "L6" V 7200 5400 40  0000 C CNN
+F 1 "valve coil" V 7350 5400 40  0000 C CNN
+F 2 "" H 7250 5400 60  0001 C CNN
+F 3 "" H 7250 5400 60  0001 C CNN
+	1    7250 5400
+	0    -1   -1   0   
+$EndComp
+Text GLabel 6400 6400 2    60   Input ~ 0
+GND
+$Comp
+L R R9
+U 1 1 514DC49C
+P 6050 6400
+F 0 "R9" V 6130 6400 50  0000 C CNN
+F 1 "10k" V 6050 6400 50  0000 C CNN
+F 2 "" H 6050 6400 60  0001 C CNN
+F 3 "" H 6050 6400 60  0001 C CNN
+	1    6050 6400
+	0    -1   -1   0   
+$EndComp
+$Comp
+L MOS_N Q5
+U 1 1 514DC49B
+P 6200 6000
+F 0 "Q5" H 6210 6170 60  0000 R CNN
+F 1 "IRF530" H 6210 5850 60  0000 R CNN
+F 2 "" H 6200 6000 60  0001 C CNN
+F 3 "" H 6200 6000 60  0001 C CNN
+	1    6200 6000
+	1    0    0    -1  
+$EndComp
+Text GLabel 10750 3500 2    60   Input ~ 0
++12V
+$Comp
+L DIODE D5
+U 1 1 514DC498
+P 10350 3800
+F 0 "D5" H 10350 3900 40  0000 C CNN
+F 1 "1N4001" H 10350 3700 40  0000 C CNN
+F 2 "" H 10350 3800 60  0001 C CNN
+F 3 "" H 10350 3800 60  0001 C CNN
+	1    10350 3800
+	1    0    0    -1  
+$EndComp
+$Comp
+L INDUCTOR L5
+U 1 1 514DC497
+P 10350 3500
+F 0 "L5" V 10300 3500 40  0000 C CNN
+F 1 "valve coil" V 10450 3500 40  0000 C CNN
+F 2 "" H 10350 3500 60  0001 C CNN
+F 3 "" H 10350 3500 60  0001 C CNN
+	1    10350 3500
+	0    -1   -1   0   
+$EndComp
+Text GLabel 9500 4500 2    60   Input ~ 0
+GND
+$Comp
+L R R8
+U 1 1 514DC496
+P 9150 4500
+F 0 "R8" V 9230 4500 50  0000 C CNN
+F 1 "10k" V 9150 4500 50  0000 C CNN
+F 2 "" H 9150 4500 60  0001 C CNN
+F 3 "" H 9150 4500 60  0001 C CNN
+	1    9150 4500
+	0    -1   -1   0   
+$EndComp
+$Comp
+L MOS_N Q4
+U 1 1 514DC495
+P 9300 4100
+F 0 "Q4" H 9310 4270 60  0000 R CNN
+F 1 "IRF530" H 9310 3950 60  0000 R CNN
+F 2 "" H 9300 4100 60  0001 C CNN
+F 3 "" H 9300 4100 60  0001 C CNN
+	1    9300 4100
+	1    0    0    -1  
+$EndComp
+Text GLabel 7650 3500 2    60   Input ~ 0
++12V
+$Comp
+L DIODE D4
+U 1 1 514DC490
+P 7250 3800
+F 0 "D4" H 7250 3900 40  0000 C CNN
+F 1 "1N4001" H 7250 3700 40  0000 C CNN
+F 2 "" H 7250 3800 60  0001 C CNN
+F 3 "" H 7250 3800 60  0001 C CNN
+	1    7250 3800
+	1    0    0    -1  
+$EndComp
+$Comp
+L INDUCTOR L4
+U 1 1 514DC48F
+P 7250 3500
+F 0 "L4" V 7200 3500 40  0000 C CNN
+F 1 "valve coil" V 7350 3500 40  0000 C CNN
+F 2 "" H 7250 3500 60  0001 C CNN
+F 3 "" H 7250 3500 60  0001 C CNN
+	1    7250 3500
+	0    -1   -1   0   
+$EndComp
+Text GLabel 6400 4500 2    60   Input ~ 0
+GND
+$Comp
+L R R7
+U 1 1 514DC48E
+P 6050 4500
+F 0 "R7" V 6130 4500 50  0000 C CNN
+F 1 "10k" V 6050 4500 50  0000 C CNN
+F 2 "" H 6050 4500 60  0001 C CNN
+F 3 "" H 6050 4500 60  0001 C CNN
+	1    6050 4500
+	0    -1   -1   0   
+$EndComp
+$Comp
+L MOS_N Q3
+U 1 1 514DC48D
+P 6200 4100
+F 0 "Q3" H 6210 4270 60  0000 R CNN
+F 1 "IRF530" H 6210 3950 60  0000 R CNN
+F 2 "" H 6200 4100 60  0001 C CNN
+F 3 "" H 6200 4100 60  0001 C CNN
+	1    6200 4100
+	1    0    0    -1  
+$EndComp
+Text GLabel 10750 1600 2    60   Input ~ 0
++12V
+$Comp
+L DIODE D3
+U 1 1 514DC485
+P 10350 1900
+F 0 "D3" H 10350 2000 40  0000 C CNN
+F 1 "1N4001" H 10350 1800 40  0000 C CNN
+F 2 "" H 10350 1900 60  0001 C CNN
+F 3 "" H 10350 1900 60  0001 C CNN
+	1    10350 1900
+	1    0    0    -1  
+$EndComp
+$Comp
+L INDUCTOR L3
+U 1 1 514DC484
+P 10350 1600
+F 0 "L3" V 10300 1600 40  0000 C CNN
+F 1 "valve coil" V 10450 1600 40  0000 C CNN
+F 2 "" H 10350 1600 60  0001 C CNN
+F 3 "" H 10350 1600 60  0001 C CNN
+	1    10350 1600
+	0    -1   -1   0   
+$EndComp
+Text GLabel 9500 2600 2    60   Input ~ 0
+GND
+$Comp
+L R R6
+U 1 1 514DC483
+P 9150 2600
+F 0 "R6" V 9230 2600 50  0000 C CNN
+F 1 "10k" V 9150 2600 50  0000 C CNN
+F 2 "" H 9150 2600 60  0001 C CNN
+F 3 "" H 9150 2600 60  0001 C CNN
+	1    9150 2600
+	0    -1   -1   0   
+$EndComp
+$Comp
+L MOS_N Q2
+U 1 1 514DC482
+P 9300 2200
+F 0 "Q2" H 9310 2370 60  0000 R CNN
+F 1 "IRF530" H 9310 2050 60  0000 R CNN
+F 2 "" H 9300 2200 60  0001 C CNN
+F 3 "" H 9300 2200 60  0001 C CNN
+	1    9300 2200
+	1    0    0    -1  
+$EndComp
+$Comp
+L MOS_N Q1
+U 1 1 514B4D79
+P 6200 2200
+F 0 "Q1" H 6210 2370 60  0000 R CNN
+F 1 "IRF530" H 6210 2050 60  0000 R CNN
+F 2 "" H 6200 2200 60  0001 C CNN
+F 3 "" H 6200 2200 60  0001 C CNN
+	1    6200 2200
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R5
+U 1 1 514B4D77
+P 6050 2600
+F 0 "R5" V 6130 2600 50  0000 C CNN
+F 1 "10k" V 6050 2600 50  0000 C CNN
+F 2 "" H 6050 2600 60  0001 C CNN
+F 3 "" H 6050 2600 60  0001 C CNN
+	1    6050 2600
+	0    -1   -1   0   
+$EndComp
+Text GLabel 6400 2600 2    60   Input ~ 0
+GND
+$Comp
+L INDUCTOR L2
+U 1 1 514B4D76
+P 7250 1600
+F 0 "L2" V 7200 1600 40  0000 C CNN
+F 1 "valve coil" V 7350 1600 40  0000 C CNN
+F 2 "" H 7250 1600 60  0001 C CNN
+F 3 "" H 7250 1600 60  0001 C CNN
+	1    7250 1600
+	0    -1   -1   0   
+$EndComp
+$Comp
+L DIODE D2
+U 1 1 514B4D75
+P 7250 1900
+F 0 "D2" H 7250 2000 40  0000 C CNN
+F 1 "1N4001" H 7250 1800 40  0000 C CNN
+F 2 "" H 7250 1900 60  0001 C CNN
+F 3 "" H 7250 1900 60  0001 C CNN
+	1    7250 1900
+	1    0    0    -1  
+$EndComp
+Text GLabel 7650 1600 2    60   Input ~ 0
++12V
+$Comp
+L PCF8574 U3
+U 1 1 521DDC50
+P 2050 1550
+F 0 "U3" H 2320 2250 60  0000 C CNN
+F 1 "PCF8574" H 2440 852 60  0000 C CNN
+F 2 "" H 2050 1550 60  0000 C CNN
+F 3 "" H 2050 1550 60  0000 C CNN
+	1    2050 1550
+	1    0    0    -1  
+$EndComp
+Text HLabel 1150 1100 0    60   Input ~ 0
+SCL
+Text HLabel 1150 1200 0    60   Input ~ 0
+SDA
+Wire Wire Line
+	4400 1200 2700 1200
+Wire Wire Line
+	2700 1300 4100 1300
+Wire Wire Line
+	2700 1400 3800 1400
+Wire Wire Line
+	2700 1500 3500 1500
+Wire Wire Line
+	2700 1600 3200 1600
+NoConn ~ 2700 1700
+NoConn ~ 2700 1800
+NoConn ~ 2700 2000
+Wire Wire Line
+	1150 1100 1400 1100
+Wire Wire Line
+	1150 1200 1400 1200
+Text GLabel 1000 1750 0    60   Input ~ 0
++5V
+Text GLabel 1250 2250 3    60   Input ~ 0
+GND
+Text GLabel 1150 1500 0    60   Input ~ 0
+GND
+Wire Wire Line
+	1150 1500 1400 1500
+Wire Wire Line
+	1300 1400 1300 1600
+Wire Wire Line
+	1300 1400 1400 1400
+Connection ~ 1300 1500
+Wire Wire Line
+	1300 1600 1400 1600
+Wire Wire Line
+	1000 1750 1400 1750
+Wire Wire Line
+	3200 6850 3200 6650
+Wire Wire Line
+	3500 6000 3500 5800
+Wire Wire Line
+	3800 4950 3800 4750
+Wire Wire Line
+	4400 3050 4400 2850
+Wire Wire Line
+	4400 1950 4400 1200
+Wire Wire Line
+	4100 1300 4100 3000
+Wire Wire Line
+	3800 1400 3800 3850
+Wire Wire Line
+	3500 1500 3500 4900
+Wire Wire Line
+	3200 1600 3200 5750
+Wire Wire Line
+	4700 1100 2700 1100
+Wire Wire Line
+	4700 2000 4700 2200
+Wire Wire Line
+	4100 4100 4100 3900
+$Comp
+L 74HC04 U4
+U 6 1 5228D3BE
+P 3200 6200
+F 0 "U4" H 3350 6300 40  0000 C CNN
+F 1 "74HC04" H 3400 6100 40  0000 C CNN
+F 2 "~" H 3200 6200 60  0000 C CNN
+F 3 "~" H 3200 6200 60  0000 C CNN
+	6    3200 6200
+	0    1    1    0   
+$EndComp
+$Comp
+L 74HC04 U4
+U 5 1 5228D3DF
+P 3500 5350
+F 0 "U4" H 3650 5450 40  0000 C CNN
+F 1 "74HC04" H 3700 5250 40  0000 C CNN
+F 2 "~" H 3500 5350 60  0000 C CNN
+F 3 "~" H 3500 5350 60  0000 C CNN
+	5    3500 5350
+	0    1    1    0   
+$EndComp
+$Comp
+L 74HC04 U4
+U 4 1 5228D3E5
+P 3800 4300
+F 0 "U4" H 3950 4400 40  0000 C CNN
+F 1 "74HC04" H 4000 4200 40  0000 C CNN
+F 2 "~" H 3800 4300 60  0000 C CNN
+F 3 "~" H 3800 4300 60  0000 C CNN
+	4    3800 4300
+	0    1    1    0   
+$EndComp
+$Comp
+L 74HC04 U4
+U 3 1 5228D3EB
+P 4100 3450
+F 0 "U4" H 4250 3550 40  0000 C CNN
+F 1 "74HC04" H 4300 3350 40  0000 C CNN
+F 2 "~" H 4100 3450 60  0000 C CNN
+F 3 "~" H 4100 3450 60  0000 C CNN
+	3    4100 3450
+	0    1    1    0   
+$EndComp
+$Comp
+L 74HC04 U4
+U 2 1 5228D3F1
+P 4400 2400
+F 0 "U4" H 4550 2500 40  0000 C CNN
+F 1 "74HC04" H 4600 2300 40  0000 C CNN
+F 2 "~" H 4400 2400 60  0000 C CNN
+F 3 "~" H 4400 2400 60  0000 C CNN
+	2    4400 2400
+	0    1    1    0   
+$EndComp
+$Comp
+L 74HC04 U4
+U 1 1 5228D3F7
+P 4700 1550
+F 0 "U4" H 4850 1650 40  0000 C CNN
+F 1 "74HC04" H 4900 1450 40  0000 C CNN
+F 2 "~" H 4700 1550 60  0000 C CNN
+F 3 "~" H 4700 1550 60  0000 C CNN
+	1    4700 1550
+	0    1    1    0   
+$EndComp
+Text HLabel 1150 7400 0    59   Input ~ 0
++5V_A
+Text HLabel 1150 6650 0    59   Input ~ 0
+GND_B
+Text GLabel 1350 7400 2    59   Input ~ 0
++5V
+Text GLabel 1350 6650 2    59   Input ~ 0
+GND
+Wire Wire Line
+	1150 7400 1350 7400
+Wire Wire Line
+	1150 6650 1350 6650
+Text HLabel 1150 7550 0    59   Input ~ 0
++5V_B
+Text GLabel 1350 7550 2    59   Input ~ 0
++5V
+Wire Wire Line
+	1150 7550 1350 7550
+Text HLabel 1150 6500 0    59   Input ~ 0
+GND_A
+Text GLabel 1350 6500 2    59   Input ~ 0
+GND
+Wire Wire Line
+	1150 6500 1350 6500
+Text HLabel 1150 6950 0    59   Input ~ 0
+GND_D
+Text GLabel 1350 6950 2    59   Input ~ 0
+GND
+Wire Wire Line
+	1150 6950 1350 6950
+Text HLabel 1150 6800 0    59   Input ~ 0
+GND_C
+Text GLabel 1350 6800 2    59   Input ~ 0
+GND
+Wire Wire Line
+	1150 6800 1350 6800
+Text HLabel 1150 7100 0    59   Input ~ 0
+GND_E
+Text GLabel 1350 7100 2    59   Input ~ 0
+GND
+Wire Wire Line
+	1150 7100 1350 7100
+Text HLabel 1150 7250 0    59   Input ~ 0
+GND_F
+Text GLabel 1350 7250 2    59   Input ~ 0
+GND
+Wire Wire Line
+	1150 7250 1350 7250
+Text GLabel 2150 5200 2    60   Input ~ 0
+GND
+Text GLabel 1250 5200 0    60   Input ~ 0
++5V
+$Comp
+L C C20
+U 1 1 5260D419
+P 1700 5200
+F 0 "C20" H 1750 5300 50  0000 L CNN
+F 1 "220µF" H 1750 5100 50  0000 L CNN
+F 2 "" H 1700 5200 60  0001 C CNN
+F 3 "" H 1700 5200 60  0001 C CNN
+	1    1700 5200
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	1250 5200 1500 5200
+Wire Wire Line
+	1900 5200 2150 5200
+Wire Wire Line
+	6300 2600 6300 2400
+Wire Wire Line
+	6300 2600 6400 2600
+Wire Wire Line
+	6300 3900 6600 3900
+Wire Wire Line
+	6600 3500 6950 3500
+Wire Wire Line
+	9700 5400 10050 5400
+$Comp
+L C C19
+U 1 1 5267BA68
+P 1100 1950
+F 0 "C19" H 1100 2050 40  0000 L CNN
+F 1 "100nF" H 1106 1865 40  0000 L CNN
+F 2 "~" H 1138 1800 30  0000 C CNN
+F 3 "~" H 1100 1950 60  0000 C CNN
+	1    1100 1950
+	1    0    0    -1  
+$EndComp
+Connection ~ 1100 1750
+Wire Wire Line
+	1100 2150 1100 2200
+Wire Wire Line
+	1100 2200 1400 2200
+Wire Wire Line
+	1250 2200 1250 2250
+Wire Wire Line
+	1400 2200 1400 2000
+Connection ~ 1250 2200
+Text HLabel 1150 3900 0    60   Input ~ 0
+H-TxD
+Text HLabel 1150 4100 0    60   Input ~ 0
+H-RxD
+$Comp
+L DB9 J5
+U 1 1 526A6502
+P 2400 3900
+F 0 "J5" H 2400 4450 70  0000 C CNN
+F 1 "DB9" H 2400 3350 70  0000 C CNN
+F 2 "~" H 2400 3900 60  0000 C CNN
+F 3 "~" H 2400 3900 60  0000 C CNN
+	1    2400 3900
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1150 4100 1950 4100
+Wire Wire Line
+	1150 3900 1950 3900
+Text Label 1400 3900 0    60   ~ 0
+Host TxD
+Text Label 1400 4100 0    60   ~ 0
+Host RxD
+NoConn ~ 1950 3600
+NoConn ~ 1950 3700
+NoConn ~ 1950 3800
+NoConn ~ 1950 4000
+NoConn ~ 1950 4200
+NoConn ~ 1950 4300
+Text GLabel 1600 3500 0    60   Input ~ 0
+GND
+Wire Wire Line
+	1600 3500 1950 3500
+Text GLabel 2150 5650 2    60   Input ~ 0
+GND
+Text GLabel 1250 5650 0    60   Input ~ 0
++12V
+$Comp
+L C C21
+U 1 1 528E0DC1
+P 1700 5650
+F 0 "C21" H 1750 5750 50  0000 L CNN
+F 1 "470µF" H 1750 5550 50  0000 L CNN
+F 2 "" H 1700 5650 60  0001 C CNN
+F 3 "" H 1700 5650 60  0001 C CNN
+	1    1700 5650
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	1250 5650 1500 5650
+Wire Wire Line
+	1900 5650 2150 5650
+Text Notes 800  3250 0    60   ~ 0
+Serial connector (host communication)
+Text Notes 7100 2300 0    60   ~ 0
+Valve 1
+Text Notes 10200 2300 0    60   ~ 0
+Valve 2
+Text Notes 7100 4200 0    60   ~ 0
+Valve 3
+Text Notes 10200 4200 0    60   ~ 0
+Valve 4
+Text Notes 7100 6100 0    60   ~ 0
+Valve 5
+Text Notes 10200 6100 0    60   ~ 0
+Valve 6
+Wire Wire Line
+	6950 1600 6600 1600
+Wire Wire Line
+	6300 2000 6600 2000
+Wire Wire Line
+	9400 2000 9700 2000
+Wire Wire Line
+	10050 1600 9700 1600
+Wire Wire Line
+	9400 3900 9700 3900
+Wire Wire Line
+	10050 3500 9700 3500
+Wire Wire Line
+	6950 5400 6600 5400
+Wire Wire Line
+	6600 5800 6300 5800
+Wire Wire Line
+	9700 5800 9400 5800
+Text HLabel 2100 6650 0    59   Input ~ 0
+GND_Y
+Text GLabel 2300 6650 2    59   Input ~ 0
+GND
+Wire Wire Line
+	2100 6650 2300 6650
+Text HLabel 2100 6500 0    59   Input ~ 0
+GND_X
+Text GLabel 2300 6500 2    59   Input ~ 0
+GND
+Wire Wire Line
+	2100 6500 2300 6500
+Text HLabel 2100 6800 0    59   Input ~ 0
+GND_Z
+Text GLabel 2300 6800 2    59   Input ~ 0
+GND
+Wire Wire Line
+	2100 6800 2300 6800
+Text HLabel 2100 7100 0    59   Input ~ 0
++12V_B
+Text GLabel 2300 7100 2    59   Input ~ 0
++12V
+Wire Wire Line
+	2100 7100 2300 7100
+Text HLabel 2100 6950 0    59   Input ~ 0
++12V_A
+Text GLabel 2300 6950 2    59   Input ~ 0
++12V
+Wire Wire Line
+	2100 6950 2300 6950
+Text HLabel 2100 7250 0    59   Input ~ 0
++12V_C
+Text GLabel 2300 7250 2    59   Input ~ 0
++12V
+Wire Wire Line
+	2100 7250 2300 7250
+Text HLabel 6600 2000 2    60   Input ~ 0
+V1
+Text HLabel 6600 1600 0    60   Input ~ 0
+V1
+Text HLabel 9700 2000 2    60   Input ~ 0
+V2
+Text HLabel 9700 1600 0    60   Input ~ 0
+V2
+Text HLabel 6600 3900 2    60   Input ~ 0
+V3
+Text HLabel 6600 3500 0    60   Input ~ 0
+V3
+Text HLabel 9700 3900 2    60   Input ~ 0
+V4
+Text HLabel 9700 3500 0    60   Input ~ 0
+V4
+Text HLabel 6600 5800 2    60   Input ~ 0
+V5
+Text HLabel 6600 5400 0    60   Input ~ 0
+V5
+Text HLabel 9700 5800 2    60   Input ~ 0
+V6
+Text HLabel 9700 5400 0    60   Input ~ 0
+V6
+$EndSCHEMATC
