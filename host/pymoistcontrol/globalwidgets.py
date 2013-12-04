@@ -63,7 +63,7 @@ class GlobalConfigWidget(QWidget):
 			self.layout().addWidget(potStatWidget, y, 1)
 			y += 1
 
-		self.advancedCheckBox = QCheckBox("Advanced settings", self)
+		self.advancedCheckBox = QCheckBox("Advanced", self)
 		self.layout().addWidget(self.advancedCheckBox, y, 0, 1, 2)
 		y += 1
 

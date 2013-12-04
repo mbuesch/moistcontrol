@@ -144,29 +144,36 @@ class PotWidget(QWidget):
 		self.layout().addLayout(hbox, y, 1)
 		y += 1
 
-		label = QLabel("Raw ADC value:", self)
-		self.layout().addWidget(label, y, 0)
-		self.rawAdc = QLabel(self)
-		self.layout().addWidget(self.rawAdc, y, 1)
+
+		self.advancedCheckBox = QCheckBox("Advanced", self)
+		self.layout().addWidget(self.advancedCheckBox, y, 0, 1, 2)
 		y += 1
 
+		self.advancedGroup = QGroupBox(self)
+		self.advancedGroup.setLayout(QGridLayout())
+		self.layout().addWidget(self.advancedGroup, y, 0, 1, 2)
+		y += 1
+
+		yAdv = 0
+		label = QLabel("Raw ADC value:", self)
+		self.advancedGroup.layout().addWidget(label, yAdv, 0)
+		self.rawAdc = QLabel(self)
+		self.advancedGroup.layout().addWidget(self.rawAdc, yAdv, 1)
+		yAdv += 1
 		label = QLabel("Watering state:", self)
-		self.layout().addWidget(label, y, 0)
+		self.advancedGroup.layout().addWidget(label, yAdv, 0)
 		self.wateringIndi = BitIndicator(offText = "Not watering",
 						 onText = "Watering",
 						 parent = self)
-		self.layout().addWidget(self.wateringIndi, y, 1)
-		y += 1
-
+		self.advancedGroup.layout().addWidget(self.wateringIndi, yAdv, 1)
+		yAdv += 1
 		label = QLabel("State machine:", self)
-		self.layout().addWidget(label, y, 0)
+		self.advancedGroup.layout().addWidget(label, yAdv, 0)
 		self.stateMachineText = QLabel(self)
-		self.layout().addWidget(self.stateMachineText, y, 1)
-		y += 1
-
+		self.advancedGroup.layout().addWidget(self.stateMachineText, yAdv, 1)
+		yAdv += 1
 		self.logCheckBox = QCheckBox("Enable logging", self)
-		self.layout().addWidget(self.logCheckBox, y, 0, 1, 2)
-		y += 1
+		self.advancedGroup.layout().addWidget(self.logCheckBox, yAdv, 0, 1, 2)
 
 		self.layout().setRowStretch(y, 1)
 
@@ -184,7 +191,9 @@ class PotWidget(QWidget):
 		self.forceOpenButton.pressed.connect(self.__forceOpenPressed)
 		self.forceOpenButton.released.connect(self.__forceOpenReleased)
 		self.forceStopWateringButton.pressed.connect(self.__forceStopWaterPressed)
+		self.advancedCheckBox.stateChanged.connect(self.__advancedChanged)
 
+		self.__advancedChanged(self.advancedCheckBox.checkState())
 		self.resetState()
 
 	def loggingEnabled(self):
@@ -232,6 +241,12 @@ class PotWidget(QWidget):
 
 	def getMaxThreshold(self):
 		return self.maxThreshold.value()
+
+	def __advancedChanged(self, newState):
+		if newState == Qt.Checked:
+			self.advancedGroup.show()
+		else:
+			self.advancedGroup.hide()
 
 	def __enableChanged(self, newState):
 		self.resetState()
