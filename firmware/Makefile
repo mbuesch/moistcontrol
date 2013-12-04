@@ -34,6 +34,7 @@ PROGRAMMER		:= avrisp2
 
 # Additional compiler flags
 CFLAGS			:= -DTWI_SCL_HZ=100000ul \
+			   -DCOMM_BAUDRATE=19200ul \
 			   -DCOMM_PAYLOAD_LEN=12
 LDFLAGS			:=
 

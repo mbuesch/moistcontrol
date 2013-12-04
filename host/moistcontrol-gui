@@ -66,7 +66,7 @@ class MainWidget(QWidget):
 
 		self.connected = False
 		self.pollTimer = QTimer(self)
-		self.pollTimer.setInterval(100)
+		self.pollTimer.setInterval(50)
 		self.pollTimer.setSingleShot(True)
 
 		self.globConfWidget.configChanged.connect(self.__handleGlobConfigChange)
@@ -291,9 +291,9 @@ class MainWidget(QWidget):
 				return
 			port = dlg.getSelectedPort()
 		try:
-			self.serial = SerialComm(port, baudrate = 9600,
+			self.serial = SerialComm(port, baudrate = 19200,
 						 payloadLen = 12,
-						 debug = True)
+						 debug = False)
 		except SerialError as e:
 			QMessageBox.critical(self, "Cannot connect serial port",
 				"Cannot connect serial port:\n" + str(e))
