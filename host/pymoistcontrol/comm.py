@@ -71,6 +71,16 @@ class SerialMessage(object):
 		self.da = fromMsg.da
 		self.serialComm = fromMsg.serialComm
 
+	def calcFrameDuration(self):
+		"""Returns the duration of this frame, in seconds (float)."""
+		nrBytes = self.SER_HDR_LEN +\
+			  self.serialComm.payloadLen +\
+			  self.SER_FCS_LEN
+		symbolsPerByte = 1 + self.serialComm.serial.getByteSize() +\
+				 (0 if (self.serialComm.serial.getParity() == serial.PARITY_NONE) else 1) +\
+				 self.serialComm.serial.getStopbits()
+		return (nrBytes * symbolsPerByte) / self.serialComm.serial.getBaudrate()
+
 	def getErrorCode(self):
 		return (self.fc & self.COMM_FC_ERRCODE) >> self.COMM_FC_ERRCODE_SHIFT
 
