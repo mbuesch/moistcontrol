@@ -29,12 +29,9 @@ struct flowerpot_config {
 	uint8_t min_threshold;
 	/* The upper threshold value for the regulator. */
 	uint8_t max_threshold;
-	/* The start time for the regulator.
-	 * The regulator will be disabled before this time. */
-	time_of_day_t start_time;
-	/* The end time for the regulator.
-	 * The regulator will be disabled after this time. */
-	time_of_day_t end_time;
+	/* The time of day range where the regulator is active.
+	 * The regulator will be disabled outside of this time. */
+	struct time_of_day_range active_range;
 	/* Day-of-week ON mask. Bit 0 -> monday, Bit 1 -> tuesday, etc...
 	 * If a bit it set, the regulator will be enabled on
 	 * that weekday.

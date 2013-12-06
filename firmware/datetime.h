@@ -29,6 +29,16 @@ struct rtc_time {
  */
 typedef uint16_t time_of_day_t;
 
+/* Representation of a time range in a day.
+ * It features a start time and an end time.
+ */
+struct time_of_day_range {
+	/* The start time of the range. */
+	time_of_day_t from;
+	/* The end time of the range. */
+	time_of_day_t to;
+};
+
 /* Timestamp type with second granularity.
  * For easy convertability from struct rtc_time, this type
  * stores most of the rtc_time fields in a packed format

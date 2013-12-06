@@ -64,8 +64,10 @@ static struct controller cont;
 		.flags			= 0,				\
 		.min_threshold		= 85,				\
 		.max_threshold		= 170,				\
-		.start_time		= 0,				\
-		.end_time		= (time_of_day_t)(long)-1,	\
+		.active_range = {					\
+			.from		= 0,				\
+			.to		= (time_of_day_t)(long)-1,	\
+		},							\
 		.dow_on_mask		= 0x7F,				\
 		.dow_ignoretime_mask	= 0,				\
 	}
@@ -272,14 +274,14 @@ static void handle_pot(struct flowerpot *pot)
 			break;
 		}
 
-		/* Check start_time/end_time, if requested. */
+		/* Check active range, if requested. */
 		if (!(config->dow_ignoretime_mask & dow_mask)) {
-			/* Check if we are between start_time and end_time. */
+			/* Check if we in the active range. */
 			tod = rtc_get_time_of_day(&rtc);
-			if (time_of_day_before(tod, config->start_time) ||
-			    time_of_day_after(tod, config->end_time)) {
-				/* Current time is not between start_time and
-				 * end_time. Don't run.
+			if (time_of_day_before(tod, config->active_range.from) ||
+			    time_of_day_after(tod, config->active_range.to)) {
+				/* Current time is not in the active range.
+				 * Don't run.
 				 */
 				break;
 			}
