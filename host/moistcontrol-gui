@@ -217,9 +217,17 @@ class MainWidget(QWidget):
 		try:
 			msg = self.__convertRxMsg(self.serial.poll())
 			if not msg:
-				#TODO timeout
+				self.__pollRetries += 1
+				if self.__pollRetries >= 100:
+					QMessageBox.critical(self,
+						"Communication failed",
+						"Communication failed. "
+						"Retry timeout.")
+					self.disconnectDev()
+					return
 				self.pollTimer.start(5) # Retry
 				return
+			self.__pollRetries = 0
 		except SerialError as e:
 			self.__handleCommError(e)
 			return
@@ -312,6 +320,7 @@ class MainWidget(QWidget):
 		self.fetchCycleNumber = 0
 		self.potCycleNumber = 0
 		self.logCount = 0
+		self.__pollRetries = 0
 		self.logWidget.clear()
 		self.setUiEnabled(True)
 		if not self.__initializeDev():
