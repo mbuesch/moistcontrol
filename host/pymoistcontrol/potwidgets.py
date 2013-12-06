@@ -56,7 +56,10 @@ class PotShortStatusWidget(QWidget):
 class PotWidget(QWidget):
 	"""The flower-pot tab widget."""
 
+	# Signal: Emitted, if a configuration item changed.
+	#         The first parameter (int) is the pot number.
 	configChanged = Signal(int)
+	# Signal: Emitted, if a 'manual-mode' setting changed.
 	manModeChanged = Signal()
 
 	def __init__(self, potNumber, parent):

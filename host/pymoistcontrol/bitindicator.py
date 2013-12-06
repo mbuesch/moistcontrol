@@ -26,6 +26,7 @@ class BitIndicator(QWidget):
 
 	def __init__(self, offText, onText, parent):
 		"""Class constructor."""
+
 		QWidget.__init__(self, parent)
 		self.setLayout(QGridLayout(self))
 		self.layout().setContentsMargins(QMargins())
@@ -40,12 +41,18 @@ class BitIndicator(QWidget):
 		self.setState(False)
 
 	def setState(self, newState):
+		"""Set the state of the bit indicator widget.
+		newState is a Bool for the new state."""
+
 		newState = bool(newState)
 		if newState != self.__state:
 			self.__state = newState
 			self.__update()
 
 	def __update(self):
+		"""Update the displayed text, according to
+		the current state."""
+
 		if self.__state:
 			self.textLabel.setText(self.onText)
 		else:

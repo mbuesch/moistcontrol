@@ -28,11 +28,14 @@ from pymoistcontrol.bitindicator import *
 class GlobalConfigWidget(QWidget):
 	"""Global configuration widget."""
 
+	# Signal: Emitted, if a configuration item changed.
 	configChanged = Signal()
+	# Signal: Emitted, if the RTC date or time was edited.
 	rtcEdited = Signal()
 
 	def __init__(self, parent):
 		"""Class constructor."""
+
 		QWidget.__init__(self, parent)
 		self.setLayout(QGridLayout(self))
 		y = 0

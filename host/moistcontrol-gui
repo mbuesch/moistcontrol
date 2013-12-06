@@ -217,6 +217,7 @@ class MainWidget(QWidget):
 		try:
 			msg = self.__convertRxMsg(self.serial.poll())
 			if not msg:
+				#TODO timeout
 				self.pollTimer.start(5) # Retry
 				return
 		except SerialError as e:

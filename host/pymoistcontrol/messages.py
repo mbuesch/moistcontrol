@@ -11,7 +11,6 @@ from pymoistcontrol.comm import *
 from pymoistcontrol.logging import *
 from pymoistcontrol.util import *
 
-#XXX R=9.85k
 
 class Message(SerialMessage):
 	# Types

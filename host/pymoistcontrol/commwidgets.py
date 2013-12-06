@@ -28,6 +28,7 @@ class SerialOpenDialog(QDialog):
 
 	def __init__(self, parent):
 		"""Class constructor."""
+
 		QDialog.__init__(self, parent)
 		self.setLayout(QGridLayout(self))
 
@@ -35,6 +36,9 @@ class SerialOpenDialog(QDialog):
 
 		self.portCombo = QComboBox(self)
 		if os.name.lower() == "posix":
+			# Unix operating system
+			# Add all serial devices from /dev to
+			# the combo box.
 			devNodes = QDir("/dev").entryInfoList(QDir.System,
 							      QDir.Name)
 			select = None
@@ -47,13 +51,18 @@ class SerialOpenDialog(QDialog):
 				self.portCombo.addItem(path, path)
 				if select is None and\
 				   name.startswith("ttyUSB"):
+					# Select the first ttyUSB by default.
 					select = self.portCombo.count() - 1
 			if select is not None:
 				self.portCombo.setCurrentIndex(select)
-		else:
+		elif os.name.lower() in ("nt", "ce"):
+			# Windows operating system
+			# Add 8 COM ports to the combo box.
 			for i in range(8):
 				port = "COM%d" % (i + 1)
 				self.portCombo.addItem(port, port)
+		else:
+			raise Error("Operating system not supported")
 		self.layout().addWidget(self.portCombo, 0, 0, 1, 2)
 
 		self.okButton = QPushButton("&Ok", self)
@@ -66,5 +75,9 @@ class SerialOpenDialog(QDialog):
 		self.cancelButton.released.connect(self.reject)
 
 	def getSelectedPort(self):
+		"""Get the selected port name."""
+
 		index = self.portCombo.currentIndex()
+		if index < 0:
+			return None
 		return self.portCombo.itemData(index)

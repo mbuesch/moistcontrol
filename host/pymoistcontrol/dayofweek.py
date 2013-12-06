@@ -24,10 +24,12 @@ from pymoistcontrol.util import *
 class DayOfWeekSelectWidget(QFrame):
 	"""Weekday selection widget"""
 
+	# Signal: Emitted, if any weekday checkbox changed state.
 	changed = Signal()
 
 	def __init__(self, parent):
 		"""Class constructor."""
+
 		QFrame.__init__(self, parent)
 		self.setLayout(QGridLayout())
 		self.layout().setContentsMargins(QMargins(5, 5, 3, 3))
@@ -35,6 +37,7 @@ class DayOfWeekSelectWidget(QFrame):
 		self.setFrameShape(QFrame.Box)
 		self.setFrameShadow(QFrame.Sunken)
 
+		# Add checkboxes for each day of the week.
 		self.checkBoxes = []
 		for i, name in enumerate(("Mon", "Tue", "Wed",
 					  "Thu", "Fri", "Sat", "Sun")):
@@ -45,14 +48,27 @@ class DayOfWeekSelectWidget(QFrame):
 			self.layout().addWidget(label, 1, i)
 			cb.stateChanged.connect(self.__cbStateChanged)
 
+		self.ignoreChanges = 0
+
 	def __cbStateChanged(self):
-		self.changed.emit()
+		"""One checkbox changed state."""
+
+		if not self.ignoreChanges:
+			# Emit the 'changed' signal.
+			self.changed.emit()
 
 	def getStates(self):
-		return ( cb.checkState() == Qt.Checked
-			 for cb in self.checkBoxes )
+		"""Get a tuple of Bools with the checkbox states.
+		The first bool is "Mon", the second is "Tue" and so on."""
+
+		return tuple(cb.checkState() == Qt.Checked
+			     for cb in self.checkBoxes)
 
 	def setStates(self, newStates):
+		"""Set the checkbox states.
+		newState is an interable of new states."""
+
+		self.ignoreChanges += 1
 		newStates = tuple(newStates)
 		for i, cb in enumerate(self.checkBoxes):
 			try:
@@ -60,3 +76,4 @@ class DayOfWeekSelectWidget(QFrame):
 			except IndexError:
 				s = Qt.Unchecked
 			cb.setCheckState(s)
+		self.ignoreChanges -= 1

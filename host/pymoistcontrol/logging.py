@@ -11,6 +11,8 @@ import cgi
 
 
 def controllerStateName(stateNum):
+	"""Get the name string for a controller state number."""
+
 	try:
 		stateName = {
 			0 : "POT_IDLE",
@@ -23,6 +25,8 @@ def controllerStateName(stateNum):
 	return stateName
 
 class LogItem(object):
+	"""Base class for log data."""
+
 	# Types
 	LOG_TYPE_MASK		= 0x7F
 	LOG_ERROR		= 0
@@ -34,6 +38,8 @@ class LogItem(object):
 	LOG_OVERFLOW		= 0x80
 
 	def __init__(self, logType, flags, timestamp, payload=b'\x00'*6):
+		"""Class constructor."""
+
 		self.logType = logType
 		self.flags = flags
 		self.timestamp = timestamp
@@ -41,6 +47,8 @@ class LogItem(object):
 
 	@classmethod
 	def fromBytes(cls, b):
+		"""Create a log item from raw bytes."""
+
 		try:
 			logType = b[0] & cls.LOG_TYPE_MASK
 			flags = b[0] & cls.LOG_FLAGS_MASK
@@ -72,6 +80,8 @@ class LogItem(object):
 			raise Error("Log item length error")
 
 	def getBytes(self):
+		"""Get the raw bytes from this log item."""
+
 		b = bytes([ (self.logType & self.LOG_TYPE_MASK) |\
 			    (self.flags & self.LOG_FLAGS_MASK),
 			    self.timestamp & 0xFF,
@@ -82,9 +92,14 @@ class LogItem(object):
 		return b
 
 	def getText(self):
+		"""Get a string representation of this log item."""
+
+		# Must be overridden in the subclass.
 		raise NotImplementedError
 
 	def getDateTime(self):
+		"""Get the timestamp of this log item as QDateTime."""
+
 		second = clamp((self.timestamp >> 0) & 0x3F, 0, 59)
 		minute = clamp((self.timestamp >> 6) & 0x3F, 0, 59)
 		hour = clamp((self.timestamp >> 12) & 0x1F, 0, 23)
@@ -96,20 +111,28 @@ class LogItem(object):
 
 	@property
 	def overflow(self):
+		"""Returns True, if the overflow flag is set."""
+
 		return bool(self.flags & self.LOG_OVERFLOW)
 
 class LogItemError(LogItem):
 	def __init__(self, flags, timestamp, errorCode, errorData):
+		"""Class constructor."""
+
 		LogItem.__init__(self, LogItem.LOG_ERROR, flags, timestamp)
 		self.errorCode = errorCode
 		self.errorData = errorData
 
 	def getBytes(self):
+		"""Get the raw bytes from this log item."""
+
 		self.payload = bytes([ self.errorCode,
 				       self.errorData ])
 		return LogItem.getBytes(self)
 
 	def getText(self):
+		"""Get a string representation of this log item."""
+
 		pass#TODO
 
 class LogItemInfo(LogItem):
@@ -117,16 +140,22 @@ class LogItemInfo(LogItem):
 	LOG_INFO_CONTSTATCHG		= 1
 
 	def __init__(self, flags, timestamp, infoCode, infoData):
+		"""Class constructor."""
+
 		LogItem.__init__(self, LogItem.LOG_ERROR, flags, timestamp)
 		self.infoCode = infoCode
 		self.infoData = infoData
 
 	def getBytes(self):
+		"""Get the raw bytes from this log item."""
+
 		self.payload = bytes([ self.infoCode,
 				       self.infoData ])
 		return LogItem.getBytes(self)
 
 	def getText(self):
+		"""Get a string representation of this log item."""
+
 		if self.infoCode == self.LOG_INFO_DEBUG:
 			return "Debug message: %d" % self.infoData
 		elif self.infoCode == self.LOG_INFO_CONTSTATCHG:
@@ -141,17 +170,23 @@ class LogItemInfo(LogItem):
 
 class LogItemSensorData(LogItem):
 	def __init__(self, flags, timestamp, sensorNr, sensorValue):
+		"""Class constructor."""
+
 		LogItem.__init__(self, LogItem.LOG_SENSOR_DATA, flags, timestamp)
 		self.sensorNr = sensorNr
 		self.sensorValue = sensorValue
 
 	def getBytes(self):
+		"""Get the raw bytes from this log item."""
+
 		sv = (self.sensorValue & 0x3FF) | ((self.sensorNr & 0x3F) << 10)
 		self.payload = bytes([ sv & 0xFF,
 				       (sv >> 8) & 0xFF, ])
 		return LogItem.getBytes(self)
 
 	def getText(self):
+		"""Get a string representation of this log item."""
+
 		pass#TODO
 
 class LogWidget(QWidget):
@@ -163,6 +198,7 @@ class LogWidget(QWidget):
 
 	def __init__(self, parent):
 		"""Class constructor."""
+
 		QWidget.__init__(self, parent)
 		self.setLayout(QGridLayout(self))
 		self.layout().setContentsMargins(QMargins())
@@ -174,10 +210,14 @@ class LogWidget(QWidget):
 		self.clear()
 
 	def clear(self):
+		"""Remove all log messages."""
+
 		self.messages = []
 		self.text.clear()
 
 	def __commitText(self):
+		"""Write all messages to the text box."""
+
 		limit = 100
 		if len(self.messages) > limit:
 			self.messages.pop(0)
@@ -191,6 +231,9 @@ class LogWidget(QWidget):
 		scroll.setValue(scroll.maximum())
 
 	def handleLogMessage(self, msg):
+		"""Add a message to the log.
+		'msg' is an instance of a LogItem subclass."""
+
 		text = msg.logItem.getText()
 		if not text:
 			return
