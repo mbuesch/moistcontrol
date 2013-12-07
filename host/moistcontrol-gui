@@ -105,8 +105,8 @@ class MainWidget(QWidget):
 		msg = MsgRtc(second = dateTime.time().second(),
 			     minute = dateTime.time().minute(),
 			     hour = dateTime.time().hour(),
-			     day = dateTime.date().day(),
-			     month = dateTime.date().month(),
+			     day = dateTime.date().day() - 1,
+			     month = dateTime.date().month() - 1,
 			     year = clamp(dateTime.date().year(), 2000, 2063) - 2000,
 			     day_of_week = dateTime.date().dayOfWeek() - 1)
 		try:

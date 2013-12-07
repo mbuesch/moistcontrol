@@ -162,7 +162,7 @@ class GlobalConfigWidget(QWidget):
 
 	def handleRtcMessage(self, msg):
 		self.ignoreChanges += 1
-		date = QDate(2000 + msg.year, msg.month, msg.day)
+		date = QDate(2000 + msg.year, msg.month + 1, msg.day + 1)
 		time = QTime(msg.hour, msg.minute, msg.second)
 		if self.rtcEdit.isReadOnly():
 			self.rtcEdit.setDateTime(QDateTime(date, time))
