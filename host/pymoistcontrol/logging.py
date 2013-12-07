@@ -133,7 +133,7 @@ class LogItemError(LogItem):
 	def getText(self):
 		"""Get a string representation of this log item."""
 
-		pass#TODO
+		return "Error %d (%d) occurred" % (self.errorCode, self.errorData)
 
 class LogItemInfo(LogItem):
 	LOG_INFO_DEBUG			= 0
@@ -187,7 +187,8 @@ class LogItemSensorData(LogItem):
 	def getText(self):
 		"""Get a string representation of this log item."""
 
-		pass#TODO
+		return "Pot %d sensor ADC value measured: %d" %\
+			(self.sensorNr + 1, self.sensorValue)
 
 class LogWidget(QWidget):
 	"""Message log widget"""
