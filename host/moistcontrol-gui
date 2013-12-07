@@ -218,7 +218,7 @@ class MainWidget(QWidget):
 			msg = self.__convertRxMsg(self.serial.poll())
 			if not msg:
 				self.__pollRetries += 1
-				if self.__pollRetries >= 100:
+				if self.__pollRetries >= 200:
 					QMessageBox.critical(self,
 						"Communication failed",
 						"Communication failed. "
