@@ -240,7 +240,7 @@ class LogWidget(QWidget):
 		if text.endswith("\n"):
 			text = text[:-1]
 		text = self.htmlEscape(text)
-		time = msg.logItem.getDateTime().toString("yyyy:MM:dd hh:mm:ss")
+		time = msg.logItem.getDateTime().toString("yyyy.MM.dd hh:mm:ss")
 		ovr = "&nbsp;QUEUE OVERFLOW" if msg.logItem.overflow else ""
 		text = "<i>[%s%s]</i>&nbsp;&nbsp;%s<br />" % (time, ovr, text)
 		self.messages.append(text)
