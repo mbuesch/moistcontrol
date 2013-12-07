@@ -286,6 +286,7 @@ class MainWidget(QWidget):
 				msg = self.__convertRxMsg(self.serial.sendSync(MsgContrPotConfFetch(i)),
 							  fatalOnNoMsg = True)
 				self.potWidgets[i].handlePotConfMessage(msg)
+				self.globConfWidget.handlePotConfMessage(msg)
 			# Reset manual mode
 			msg = MsgManMode(force_stop_watering_mask = 0,
 					 valve_manual_mask = 0,

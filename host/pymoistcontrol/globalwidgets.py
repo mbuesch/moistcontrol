@@ -157,6 +157,11 @@ class GlobalConfigWidget(QWidget):
 		self.statWidgets[msg.pot_number].handlePotStateMessage(msg)
 		self.ignoreChanges -= 1
 
+	def handlePotConfMessage(self, msg):
+		self.ignoreChanges += 1
+		self.statWidgets[msg.pot_number].enableMessageHandling(msg.flags & msg.POT_FLG_ENABLED)
+		self.ignoreChanges -= 1
+
 	def handlePotEnableChange(self, potNumber, enabled):
 		self.statWidgets[potNumber].enableMessageHandling(enabled)
 
