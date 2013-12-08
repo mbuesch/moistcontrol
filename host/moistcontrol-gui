@@ -88,19 +88,15 @@ class MainWidget(QWidget):
 				     "%s" % str(exception))
 		self.disconnectDev()
 
-	def __handleGlobConfigChange(self):
+	def __makeMsg_GlobalConfig(self):
 		msg = MsgContrConf(flags = 0,
 				   sensor_lowest_value = self.globConfWidget.lowestRawSensorVal(),
 				   sensor_highest_value = self.globConfWidget.highestRawSensorVal())
 		if self.globConfWidget.globalEnableActive():
 			msg.flags |= msg.CONTR_FLG_ENABLE
-		try:
-			self.serial.send(msg)
-		except SerialError as e:
-			self.__handleCommError(e)
-			return
+		return msg
 
-	def __handleRtcEdit(self):
+	def __makeMsg_RTC(self):
 		dateTime = self.globConfWidget.getRtcDateTime()
 		msg = MsgRtc(second = dateTime.time().second(),
 			     minute = dateTime.time().minute(),
@@ -109,13 +105,9 @@ class MainWidget(QWidget):
 			     month = dateTime.date().month() - 1,
 			     year = clamp(dateTime.date().year(), 2000, 2063) - 2000,
 			     day_of_week = dateTime.date().dayOfWeek() - 1)
-		try:
-			self.serial.send(msg)
-		except SerialError as e:
-			self.__handleCommError(e)
-			return
+		return msg
 
-	def __handlePotConfigChange(self, potNumber):
+	def __makeMsg_PotConfig(self, potNumber):
 		pot = self.potWidgets[potNumber]
 		self.globConfWidget.handlePotEnableChange(potNumber,
 							  pot.isEnabled())
@@ -131,13 +123,9 @@ class MainWidget(QWidget):
 			msg.flags |= msg.POT_FLG_ENABLED
 		if pot.loggingEnabled():
 			msg.flags |= msg.POT_FLG_LOG
-		try:
-			self.serial.send(msg)
-		except SerialError as e:
-			self.__handleCommError(e)
-			return
+		return msg
 
-	def __handleManModeChange(self):
+	def __makeMsg_ManMode(self):
 		msg = MsgManMode(force_stop_watering_mask = 0,
 				 valve_manual_mask = 0,
 				 valve_manual_state = 0)
@@ -147,8 +135,32 @@ class MainWidget(QWidget):
 			if pot.forceOpenValveActive():
 				msg.valve_manual_mask |= 1 << i
 				msg.valve_manual_state |= 1 << i
+		return msg
+
+	def __handleGlobConfigChange(self):
 		try:
-			self.serial.send(msg)
+			self.serial.send(self.__makeMsg_GlobalConfig())
+		except SerialError as e:
+			self.__handleCommError(e)
+			return
+
+	def __handleRtcEdit(self):
+		try:
+			self.serial.send(self.__makeMsg_RTC())
+		except SerialError as e:
+			self.__handleCommError(e)
+			return
+
+	def __handlePotConfigChange(self, potNumber):
+		try:
+			self.serial.send(self.__makeMsg_PotConfig(potNumber))
+		except SerialError as e:
+			self.__handleCommError(e)
+			return
+
+	def __handleManModeChange(self):
+		try:
+			self.serial.send(self.__makeMsg_ManMode())
 		except SerialError as e:
 			self.__handleCommError(e)
 			return
