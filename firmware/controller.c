@@ -31,9 +31,11 @@
 #include <avr/eeprom.h>
 
 
-#define CTRL_INTERVAL_SEC	1 //60 TODO
-#define VALVE_OPEN_MS		1000
-#define VALVE_CLOSE_MS		15000
+#define FIRST_CTRL_INTERVAL_SEC		10
+#define CTRL_INTERVAL_SEC		60
+
+#define VALVE_OPEN_MS			1000
+#define VALVE_CLOSE_MS			15000
 
 
 struct flowerpot {
@@ -235,7 +237,7 @@ static void pot_reset(struct flowerpot *pot)
 	}
 
 	pot->state.is_watering = 0;
-	pot->next_measurement = jiffies_get() + sec_to_jiffies(1);
+	pot->next_measurement = jiffies_get() + sec_to_jiffies(FIRST_CTRL_INTERVAL_SEC);
 	pot_state_enter(pot, POT_IDLE);
 	pot->valve_manual_en = 0;
 	pot->valve_manual_state = 0;
