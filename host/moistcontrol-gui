@@ -351,6 +351,92 @@ class MainWidget(QWidget):
 			self.connected = False
 			self.serialDisconnected.emit()
 
+	def getSettingsText(self):
+		settings = [
+			"[MOISTCONTROL_SETTINGS]\n" \
+			"file_version=0\n" \
+			"date=%s\n" % \
+			(QDateTime.currentDateTime().toUTC().toString("yyyy.MM.dd_hh:mm:ss.zzz_UTC"))
+		]
+		# Write global config
+		msg = self.__makeMsg_GlobalConfig()
+		settings.append(msg.toText())
+		# Write pot configs
+		for i in range(MAX_NR_FLOWERPOTS):
+			msg = self.__makeMsg_PotConfig(i)
+			settings.append(msg.toText())
+		return "\n".join(settings)
+
+	def setSettingsText(self, settings):
+		try:
+			p = configparser.ConfigParser()
+			p.read_string(settings)
+			ver = p.getint("MOISTCONTROL_SETTINGS", "file_version")
+			if ver != 0:
+				raise Error("Unsupported file version. "
+					    "Expected v0, but got v%d." % ver)
+			# Read global config
+			msg = MsgContrConf()
+			msg.fromText(settings)
+			self.globConfWidget.handleGlobalConfMessage(msg)
+			self.serial.send(msg) # send to device
+			# Read pot configs
+			for i in range(MAX_NR_FLOWERPOTS):
+				msg = MsgContrPotConf(i)
+				msg.fromText(settings)
+				self.potWidgets[i].handlePotConfMessage(msg)
+				self.serial.send(msg) # send to device
+		except configparser.Error as e:
+			raise Error(str(e))
+		except SerialError as e:
+			raise Error("Failed to send config to device:\n" % str(e))
+
+	def doLoadSettings(self, filename):
+		try:
+			fd = open(filename, "rb")
+			settings = fd.read().decode("UTF-8")
+			fd.close()
+			self.setSettingsText(settings)
+		except (IOError, UnicodeError, Error) as e:
+			QMessageBox.critical(self,
+				"Failed to read file",
+				"Failed to read the settings file:\n"
+				"%s" % str(e))
+
+	def loadSettings(self):
+		fn, filt = QFileDialog.getOpenFileName(self,
+				"Load settings from file",
+				"",
+				"Settings file (*.moi);;"
+				"All files (*)")
+		if not fn:
+			return
+		self.doLoadSettings(fn)
+
+	def doSaveSettingsAs(self, filename):
+		try:
+			fd = open(filename, "wb")
+			fd.write(self.getSettingsText().encode("UTF-8"))
+			fd.close()
+		except (IOError, UnicodeError, Error) as e:
+			QMessageBox.critical(self,
+				"Failed to write file",
+				"Failed to write the settings file:\n"
+				"%s" % str(e))
+
+	def saveSettingsAs(self):
+		fn, filt = QFileDialog.getSaveFileName(self,
+				"Save settings to file",
+				"",
+				"Settings file (*.moi);;"
+				"All files (*)")
+		if not fn:
+			return
+		if "(*.moi)" in filt:
+			if not fn.endswith(".moi"):
+				fn += ".moi"
+		self.doSaveSettingsAs(fn)
+
 class MainWindow(QMainWindow):
 	"""The main program window."""
 
@@ -365,6 +451,9 @@ class MainWindow(QMainWindow):
 		self.setMenuBar(QMenuBar(self))
 
 		menu = QMenu("&File", self)
+		self.loadButton = menu.addAction("&Load settings...", self.loadSettings)
+		self.saveButton = menu.addAction("&Save settings as...", self.saveSettingsAs)
+		menu.addSeparator()
 		menu.addAction("&Exit", self.close)
 		self.menuBar().addMenu(menu)
 
@@ -389,6 +478,14 @@ class MainWindow(QMainWindow):
 		self.connToolButton.setEnabled(not connected)
 		self.disconnMenuButton.setEnabled(connected)
 		self.disconnToolButton.setEnabled(connected)
+		self.loadButton.setEnabled(connected)
+		self.saveButton.setEnabled(connected)
+
+	def loadSettings(self):
+		self.centralWidget().loadSettings()
+
+	def saveSettingsAs(self):
+		self.centralWidget().saveSettingsAs()
 
 	def connectDev(self, port=None):
 		self.centralWidget().connectDev(port)

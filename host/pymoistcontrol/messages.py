@@ -7,6 +7,8 @@
 
 import time
 import datetime
+import configparser
+
 from pymoistcontrol.comm import *
 from pymoistcontrol.logging import *
 from pymoistcontrol.util import *
@@ -102,6 +104,12 @@ class Message(SerialMessage):
 	def getPayload(self):
 		return b""
 
+	def toText(self):
+		raise NotImplementedError
+
+	def fromText(self):
+		raise NotImplementedError
+
 class MsgLog(Message):
 	def __init__(self, logItem):
 		self.logItem = logItem
@@ -127,8 +135,8 @@ class MsgLogFetch(Message):
 
 class MsgRtc(Message):
 	def __init__(self,
-		     second, minute, hour, day,
-		     month, year, day_of_week):
+		     second = 0, minute = 0, hour = 0, day = 0,
+		     month = 0, year = 0, day_of_week = 0):
 		self.second = second
 		self.minute = minute
 		self.hour = hour
@@ -151,6 +159,44 @@ class MsgRtc(Message):
 			       clamp(self.year, 0, 99),
 			       clamp(self.day_of_week, 0, 6), ])
 
+	def toText(self):
+		return "[RTC]\n" \
+		       "second=%d\n" \
+		       "minute=%d\n" \
+		       "hour=%d\n" \
+		       "day=%d\n" \
+		       "month=%d\n" \
+		       "year=%d\n" \
+		       "day_of_week=%d\n" % \
+		       (self.second,
+			self.minute,
+			self.hour,
+			self.day,
+			self.month,
+			self.year,
+			self.day_of_week)
+
+	def fromText(self, text):
+		try:
+			p = configparser.ConfigParser()
+			p.read_string(text)
+			self.second = clamp(p.getint("RTC", "second"),
+					    0, 59)
+			self.minute = clamp(p.getint("RTC", "minute"),
+					    0, 59)
+			self.hour = clamp(p.getint("RTC", "hour"),
+					  0, 23)
+			self.day = clamp(p.getint("RTC", "day"),
+					 0, 30)
+			self.month = clamp(p.getint("RTC", "month"),
+					   0, 11)
+			self.year = clamp(p.getint("RTC", "year"),
+					  0, 99)
+			self.day_of_week = clamp(p.getint("RTC", "day_of_week"),
+						 0, 6)
+		except configparser.Error as e:
+			raise Error(str(e))
+
 class MsgRtcFetch(Message):
 	def __init__(self):
 		Message.__init__(self, fc = Message.COMM_FC_REQ_ACK)
@@ -165,9 +211,9 @@ class MsgContrConf(Message):
 	CONTR_FLG_ENABLE	= 0x01
 
 	def __init__(self,
-		     flags,
-		     sensor_lowest_value,
-		     sensor_highest_value):
+		     flags = 0,
+		     sensor_lowest_value = 0,
+		     sensor_highest_value = 0):
 		self.flags = flags
 		self.sensor_lowest_value = sensor_lowest_value
 		self.sensor_highest_value = sensor_highest_value
@@ -183,6 +229,27 @@ class MsgContrConf(Message):
 			       (self.sensor_lowest_value >> 8) & 0xFF,
 			       self.sensor_highest_value & 0xFF,
 			       (self.sensor_highest_value >> 8) & 0xFF, ])
+
+	def toText(self):
+		return "[GLOBAL_CONFIG]\n" \
+		       "flags=%d\n" \
+		       "sensor_lowest_value=%d\n" \
+		       "sensor_highest_value=%d\n" % \
+		       (self.flags,
+			self.sensor_lowest_value,
+			self.sensor_highest_value)
+
+	def fromText(self, text):
+		try:
+			p = configparser.ConfigParser()
+			p.read_string(text)
+			self.flags = p.getint("GLOBAL_CONFIG", "flags")
+			self.sensor_lowest_value = p.getint("GLOBAL_CONFIG",
+							    "sensor_lowest_value")
+			self.sensor_highest_value = p.getint("GLOBAL_CONFIG",
+							     "sensor_highest_value")
+		except configparser.Error as e:
+			raise Error(str(e))
 
 class MsgContrConfFetch(Message):
 	def __init__(self):
@@ -216,13 +283,13 @@ class MsgContrPotConf(Message):
 
 	def __init__(self,
 		     pot_number,
-		     flags,
-		     min_threshold,
-		     max_threshold,
-		     start_time,
-		     end_time,
-		     dow_on_mask,
-		     dow_ignoretime_mask):
+		     flags = 0,
+		     min_threshold = 0,
+		     max_threshold = 0,
+		     start_time = 0,
+		     end_time = 0,
+		     dow_on_mask = 0,
+		     dow_ignoretime_mask = 0):
 		self.pot_number = pot_number
 		self.flags = flags
 		self.min_threshold = min_threshold
@@ -249,6 +316,45 @@ class MsgContrPotConf(Message):
 			       self.dow_on_mask & 0xFF,
 			       self.dow_ignoretime_mask & 0xFF, ])
 
+	def toText(self):
+		return "[POT_%d_CONFIG]\n" \
+		       "flags=%d\n" \
+		       "min_threshold=%d\n" \
+		       "max_threshold=%d\n" \
+		       "start_time=%d\n" \
+		       "end_time=%d\n" \
+		       "dow_on_mask=%d\n" \
+		       "dow_ignoretime_mask=%d\n" % \
+		       (self.pot_number,
+			self.flags,
+			self.min_threshold,
+			self.max_threshold,
+			self.start_time,
+			self.end_time,
+			self.dow_on_mask,
+			self.dow_ignoretime_mask)
+
+	def fromText(self, text):
+		try:
+			p = configparser.ConfigParser()
+			p.read_string(text)
+			self.flags = p.getint("POT_%d_CONFIG" % self.pot_number,
+					      "flags")
+			self.min_threshold = p.getint("POT_%d_CONFIG" % self.pot_number,
+						      "min_threshold")
+			self.max_threshold = p.getint("POT_%d_CONFIG" % self.pot_number,
+						      "max_threshold")
+			self.start_time = p.getint("POT_%d_CONFIG" % self.pot_number,
+						   "start_time")
+			self.end_time = p.getint("POT_%d_CONFIG" % self.pot_number,
+						 "end_time")
+			self.dow_on_mask = p.getint("POT_%d_CONFIG" % self.pot_number,
+						    "dow_on_mask")
+			self.dow_ignoretime_mask = p.getint("POT_%d_CONFIG" % self.pot_number,
+							    "dow_ignoretime_mask")
+		except configparser.Error as e:
+			raise Error(str(e))
+
 class MsgContrPotConfFetch(Message):
 	def __init__(self, pot_number):
 		self.pot_number = pot_number
@@ -264,10 +370,10 @@ class MsgContrPotConfFetch(Message):
 class MsgContrPotState(Message):
 	def __init__(self,
 		     pot_number,
-		     state_id,
-		     is_watering,
-		     last_measured_raw_value,
-		     last_measured_value):
+		     state_id = 0,
+		     is_watering = 0,
+		     last_measured_raw_value = 0,
+		     last_measured_value = 0):
 		self.pot_number = pot_number
 		self.state_id = state_id
 		self.is_watering = is_watering
@@ -301,9 +407,9 @@ class MsgContrPotStateFetch(Message):
 
 class MsgManMode(Message):
 	def __init__(self,
-		     force_stop_watering_mask,
-		     valve_manual_mask,
-		     valve_manual_state):
+		     force_stop_watering_mask = 0,
+		     valve_manual_mask = 0,
+		     valve_manual_state = 0):
 		self.force_stop_watering_mask = force_stop_watering_mask
 		self.valve_manual_mask = valve_manual_mask
 		self.valve_manual_state = valve_manual_state
