@@ -1,5 +1,5 @@
 /*
- * TWI-master Media Access Control
+ * TWI-master Medium Access Control
  *
  * Copyright (c) 2013 Michael Buesch <m@bues.ch>
  *
@@ -34,7 +34,7 @@
 # define TWI_SCL_HZ	100000ul
 #endif
 
-#define TWI_SYNC
+//#define TWI_SYNC
 
 
 enum twi_transfer_status_flags {
