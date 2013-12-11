@@ -114,9 +114,12 @@ uint8_t pcf8574_write_read(struct pcf8574_chip *chip,
  *          configured on the chip pins (Lower 3 bits).
  * chipversion_A: 1: The chip is a PCF-8574-A.
  *                0: The chip is a PCF-8574.
+ * initial_state: 1: All bits are initialized to 1.
+ *                0: All bits are initialized to 0.
  */
 void pcf8574_init(struct pcf8574_chip *chip,
-		  uint8_t address, bool chipversion_A)
+		  uint8_t address, bool chipversion_A,
+		  bool initial_state)
 {
 	/* Initialize the I2C transfer structure. */
 	twi_transfer_init(&chip->xfer);
@@ -128,6 +131,6 @@ void pcf8574_init(struct pcf8574_chip *chip,
 	else
 		chip->xfer.address = PCF8574_ADDR_BASE + (address & 7);
 
-	/* Initially write all output states to 1. */
-	pcf8574_write(chip, 0xFF);
+	/* Initially write all output states. */
+	pcf8574_write(chip, initial_state ? 0xFF : 0);
 }

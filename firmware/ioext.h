@@ -64,6 +64,6 @@ static inline void ioext_write_bit(uint8_t bit_number, bool set)
 
 void ioext_commit(void);
 
-void ioext_init(void);
+void ioext_init(bool all_ones);
 
 #endif /* IO_EXTENDER_H_ */

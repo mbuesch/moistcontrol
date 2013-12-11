@@ -14,7 +14,8 @@ struct pcf8574_chip {
 };
 
 void pcf8574_init(struct pcf8574_chip *chip,
-		  uint8_t address, bool chipversion_A);
+		  uint8_t address, bool chipversion_A,
+		  bool initial_state);
 
 void pcf8574_write(struct pcf8574_chip *chip,
 		   uint8_t write_value);

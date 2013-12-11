@@ -278,7 +278,7 @@ static void handle_pot(struct flowerpot *pot)
 
 		/* Check active range, if requested. */
 		if (!(config->dow_ignoretime_mask & dow_mask)) {
-			/* Check if we in the active range. */
+			/* Check if we are in the active range. */
 			tod = rtc_get_time_of_day(&rtc);
 			if (time_of_day_before(tod, config->active_range.from) ||
 			    time_of_day_after(tod, config->active_range.to)) {
@@ -483,7 +483,7 @@ void controller_init(void)
 	struct flowerpot *pot;
 	uint8_t i;
 
-	ioext_init();
+	ioext_init(1);
 
 	memset(&cont, 0, sizeof(cont));
 	eeprom_read_block(&cont.config, &eeprom_cont_config,

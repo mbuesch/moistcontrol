@@ -24,12 +24,19 @@
 struct ioext_context ioext_ctx;
 
 
+/* Write the I/O-extender state out to the hardware
+ * shift register.
+ */
 void ioext_commit(void)
 {
 	struct ioext_context *ctx = &ioext_ctx;
 	uint8_t chip;
 
+	/* For each chip. */
 	for (chip = 0; chip < EXTOUT_NR_CHIPS; chip++) {
+		/* Write the new state to the shift register,
+		 * if it did not change.
+		 */
 		if (ctx->states[chip] != ctx->old_states[chip]) {
 			ctx->old_states[chip] = ctx->states[chip];
 			pcf8574_write(&ctx->chips[chip],
@@ -38,12 +45,23 @@ void ioext_commit(void)
 	}
 }
 
-void ioext_init(void)
+/* Initialize the I/O-extender.
+ * This also initializes the shift register.
+ * If "all_ones" is true, all state bits are initialized to 1.
+ */
+void ioext_init(bool all_ones)
 {
 	struct ioext_context *ctx = &ioext_ctx;
 	uint8_t chip;
 
+	/* Reset data structures. */
 	memset(ctx, 0, sizeof(*ctx));
+	if (all_ones) {
+		memset(ctx->states, 0xFF, sizeof(ctx->states));
+		memset(ctx->old_states, 0xFF, sizeof(ctx->states));
+	}
+
+	/* Initialize the shift register. */
 	for (chip = 0; chip < EXTOUT_NR_CHIPS; chip++)
-		pcf8574_init(&ctx->chips[chip], chip, 1);
+		pcf8574_init(&ctx->chips[chip], chip, 1, all_ones);
 }
