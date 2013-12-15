@@ -32,10 +32,12 @@ class PotShortStatusWidget(QWidget):
 		QWidget.__init__(self, parent)
 		self.potNumber = potNumber
 		self.setLayout(QGridLayout(self))
+		self.layout().setContentsMargins(QMargins())
 
 		self.progressBar = QProgressBar(self)
 		self.progressBar.setTextVisible(False)
 		self.progressBar.setRange(0, 0xFF)
+		self.progressBar.setTextVisible(False)
 		self.layout().addWidget(self.progressBar, 0, 0)
 
 		self.reset()
