@@ -160,7 +160,7 @@ class SerialComm(object):
 		try:
 			self.serial = serial.Serial(device, baudrate, nrbits,
 						    parity, nrstop)
-		except serial.SerialException as e:
+		except (serial.SerialException, OSError) as e:
 			raise SerialError(str(e))
 		self.localAddress = localAddress
 		self.payloadLen = payloadLen
@@ -171,7 +171,7 @@ class SerialComm(object):
 	def close(self):
 		try:
 			self.serial.close()
-		except serial.SerialException as e:
+		except (serial.SerialException, OSError) as e:
 			raise SerialError("Failed to close serial line: %s" % str(e))
 
 	def setSendDelay(self, seconds):
@@ -185,10 +185,7 @@ class SerialComm(object):
 			if self.serial.inWaiting() < messageLength:
 				return None
 			while 1:
-				try:
-					b = self.serial.read(messageLength)
-				except serial.SerialException as e:
-					raise SerialError(str(e))
+				b = self.serial.read(messageLength)
 				msg = SerialMessage(serialComm = self)
 				msg.setBytes(b)
 				if msg.da == self.localAddress:
@@ -198,7 +195,7 @@ class SerialComm(object):
 					return msg
 				if self.serial.inWaiting() < messageLength:
 					return None
-		except serial.SerialException as e:
+		except (serial.SerialException, OSError) as e:
 			raise SerialError("Serial receive failed: %s" % str(e))
 
 	def send(self, msg, destinationAddress=0):
@@ -219,7 +216,7 @@ class SerialComm(object):
 			else:
 				self.serial.write(data)
 			self.serial.flush()
-		except serial.SerialException as e:
+		except (serial.SerialException, OSError) as e:
 			raise SerialError("Serial send failed: %s" % str(e))
 
 	def sendSync(self, msg, destinationAddress=0, timeout=1.0):
