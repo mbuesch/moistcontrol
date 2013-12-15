@@ -35,7 +35,7 @@
  */
 void pcf8574_wait(struct pcf8574_chip *chip)
 {
-	twi_transfer_wait(&chip->xfer, 10);
+	twi_transfer_wait(&chip->xfer, 100);
 }
 
 /* Asynchronously write the output states of a PCF-8574 chip.
