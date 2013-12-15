@@ -51,7 +51,7 @@ static inline void twi_transfer_init(struct twi_transfer *xfer)
 void twi_transfer(struct twi_transfer *xfer);
 enum twi_status twi_transfer_get_status(const struct twi_transfer *xfer);
 enum twi_status twi_transfer_wait(struct twi_transfer *xfer,
-				  uint8_t timeout_ms);
+				  uint16_t timeout_ms);
 void twi_transfer_cancel(struct twi_transfer *xfer);
 
 #endif /* TWI_MASTER_MAC_H_ */

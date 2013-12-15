@@ -34,7 +34,7 @@
 # define TWI_SCL_HZ	100000ul
 #endif
 
-//#define TWI_SYNC
+#define TWI_SYNC
 
 
 enum twi_transfer_status_flags {
@@ -229,9 +229,7 @@ void twi_transfer(struct twi_transfer *xfer)
 		twi.first_xfer = xfer;
 		send_start_condition();
 	}
-
 	irq_restore(sreg);
-	_delay_us(100);//FIXME
 #endif
 }
 
@@ -252,10 +250,10 @@ enum twi_status twi_transfer_get_status(const struct twi_transfer *xfer)
 }
 
 enum twi_status twi_transfer_wait(struct twi_transfer *xfer,
-				  uint8_t timeout_ms)
+				  uint16_t timeout_ms)
 {
 	enum twi_status status;
-	uint16_t timeout = (uint16_t)timeout_ms * 100;
+	uint32_t timeout = (uint32_t)timeout_ms * 100;
 
 	while (1) {
 		status = twi_transfer_get_status(xfer);
