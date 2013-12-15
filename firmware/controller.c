@@ -34,8 +34,8 @@
 #define FIRST_CTRL_INTERVAL_SEC		10
 #define CTRL_INTERVAL_SEC		60
 
-#define VALVE_OPEN_MS			1000
-#define VALVE_CLOSE_MS			15000
+#define VALVE_OPEN_MS			3000
+#define VALVE_CLOSE_MS			30000
 
 
 struct flowerpot {
