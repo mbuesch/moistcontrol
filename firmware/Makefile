@@ -76,7 +76,12 @@ QUIET_DEPEND		= $(Q:@=@$(ECHO) '     DEPEND   '$@;)$(CC)
 QUIET_OBJCOPY		= $(Q:@=@$(ECHO) '     OBJCOPY  '$@;)$(OBJCOPY)
 QUIET_SIZE		= $(Q:@=@$(ECHO) '     SIZE     '$@;)$(SIZE)
 
-CFLAGS			+= -mmcu=$(GCC_ARCH) -std=c99 -g -O$(O) -Wall \
+CFLAGS			+= -mmcu=$(GCC_ARCH) -std=c99 -g -O$(O) \
+			  -Wall -Wextra -Wno-unused-parameter -Wswitch-enum \
+			  -Wsuggest-attribute=noreturn \
+			  -Wundef -Wpointer-arith -Winline \
+			  -Wstack-usage=128 \
+			  -Wcast-qual -Wlogical-op \
 			  "-Dinline=inline __attribute__((__always_inline__))" \
 			  -fshort-enums -DF_CPU=$(F_CPU)
 

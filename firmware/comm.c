@@ -210,7 +210,7 @@ static void handle_rx(const struct comm_message *msg)
 		goto ack;
 	}
 
-	ok = comm_handle_rx_message(msg, comm_payload(&reply));
+	ok = comm_handle_rx_message(msg, comm_payload(void *, &reply));
 	if (!ok) {
 		comm_msg_set_err(&reply, COMM_ERR_FAIL);
 		goto ack;

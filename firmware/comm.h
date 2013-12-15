@@ -100,7 +100,7 @@ static inline void comm_msg_set_da(struct comm_message *msg, uint8_t da)
 	msg->addr = (msg->addr & 0x0F) | (da << 4);
 }
 
-#define comm_payload(msg)		((void *)((msg)->payload))
+#define comm_payload(payload_ptr_type, msg)	((payload_ptr_type)((msg)->payload))
 
 void comm_init(void);
 

@@ -110,7 +110,7 @@ static jiffies_t next_rtc_fetch;
 bool comm_handle_rx_message(const struct comm_message *msg,
 			    void *reply_payload)
 {
-	const struct msg_payload *pl = comm_payload(msg);
+	const struct msg_payload *pl = comm_payload(const struct msg_payload *, msg);
 	struct msg_payload *reply = reply_payload;
 	bool ok;
 

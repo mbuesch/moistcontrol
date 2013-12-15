@@ -91,6 +91,12 @@ extern const uint8_t PROGMEM _bit_to_mask8[8];
 /* Do-not-inline function attribute. */
 #define noinline		__attribute__((__noinline__))
 
+/* Pure-function attribute. */
+#define pure_fn			__attribute__((__pure__))
+
+/* Const-function attribute. */
+#define const_fn		__attribute__((__const__))
+
 /* Data structure packing attribute. */
 #define _packed			__attribute__((__packed__))
 
