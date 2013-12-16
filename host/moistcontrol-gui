@@ -290,15 +290,23 @@ class MainWidget(QWidget):
 			self.__fetchCycleNext()
 
 	def __initializeDev(self):
+		self.fetchCycleNumber = 0
+		self.potCycleNumber = 0
+		self.logCount = 0
+		self.__pollRetries = 0
 		try:
 			# Get the global configuration from the device
 			msg = self.__convertRxMsg(self.serial.sendSync(MsgContrConfFetch()),
 						  fatalOnNoMsg = True)
+			if not self.__checkRxMsg(msg, Message.MSG_CONTR_CONF):
+				return
 			self.globConfWidget.handleGlobalConfMessage(msg)
 			# Get the pot configurations from the device
 			for i in range(MAX_NR_FLOWERPOTS):
 				msg = self.__convertRxMsg(self.serial.sendSync(MsgContrPotConfFetch(i)),
 							  fatalOnNoMsg = True)
+				if not self.__checkRxMsg(msg, Message.MSG_CONTR_POT_CONF):
+					return
 				self.potWidgets[i].handlePotConfMessage(msg)
 				self.globConfWidget.handlePotConfMessage(msg)
 			# Reset manual mode
@@ -332,10 +340,6 @@ class MainWidget(QWidget):
 			QMessageBox.critical(self, "Cannot connect serial port",
 				"Cannot connect serial port:\n" + str(e))
 			return
-		self.fetchCycleNumber = 0
-		self.potCycleNumber = 0
-		self.logCount = 0
-		self.__pollRetries = 0
 		self.logWidget.clear()
 		self.setUiEnabled(True)
 		if not self.__initializeDev():
@@ -370,6 +374,12 @@ class MainWidget(QWidget):
 		return "\n".join(settings)
 
 	def setSettingsText(self, settings):
+		# Drain pending RX-messages
+		self.pollTimer.stop()
+		time.sleep(0.1)
+		while self.serial.poll():
+			pass
+		# Parse and upload the new config
 		try:
 			p = configparser.ConfigParser()
 			p.read_string(settings)
@@ -380,18 +390,19 @@ class MainWidget(QWidget):
 			# Read global config
 			msg = MsgContrConf()
 			msg.fromText(settings)
-			self.globConfWidget.handleGlobalConfMessage(msg)
 			self.serial.send(msg) # send to device
 			# Read pot configs
 			for i in range(MAX_NR_FLOWERPOTS):
 				msg = MsgContrPotConf(i)
 				msg.fromText(settings)
-				self.potWidgets[i].handlePotConfMessage(msg)
 				self.serial.send(msg) # send to device
 		except configparser.Error as e:
 			raise Error(str(e))
 		except SerialError as e:
 			raise Error("Failed to send config to device:\n" % str(e))
+		finally:
+			# Restart the communication
+			self.__initializeDev()
 
 	def doLoadSettings(self, filename):
 		try:
