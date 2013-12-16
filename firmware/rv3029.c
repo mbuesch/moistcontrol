@@ -374,6 +374,42 @@ static void rv3029_eeprom_write(uint8_t reg, uint8_t value)
 	rv3029_write_byte(RV3029_REG_ONOFFCTRL, old_onoffctrl);
 }
 
+/* Convert a given time from hardware-BCD-format to binary format. */
+static void rv3029_time_bcd_to_bin(struct rtc_time *bin_time,
+				   const struct rtc_time *bcd_time)
+{
+	/* Convert rtc_time from BCD to binary. */
+	rtc_time_from_bcd(bin_time, bcd_time);
+
+	/* In the hardware format the day count, month count and
+	 * weekday count are 1-based. In the binary rtc_time format
+	 * these are 0-based. So subtract 1 here to account for this.
+	 */
+	bin_time->day -= 1;
+	bin_time->month -= 1;
+	bin_time->day_of_week -= 1;
+}
+
+/* Convert a given time from binary format to hardware-BCD-format. */
+static void rv3029_time_bin_to_bcd(struct rtc_time *bcd_time,
+				   const struct rtc_time *bin_time)
+{
+	struct rtc_time tmp_bin_time = *bin_time;
+
+	/* In the hardware format the day count, month count and
+	 * weekday count are 1-based. In the binary rtc_time format
+	 * these are 0-based. So add 1 here to account for this.
+	 * Also limit year to 79, because this is the max value according
+	 * to the datasheet.
+	 */
+	tmp_bin_time.day += 1;
+	tmp_bin_time.month += 1;
+	tmp_bin_time.day_of_week += 1;
+	tmp_bin_time.year = clamp(tmp_bin_time.year, 0, 79);
+
+	rtc_time_to_bcd(bcd_time, &tmp_bin_time);
+}
+
 /* Write "time" to the RTC's watch registers. */
 void rv3029_write_time(const struct rtc_time *time)
 {
@@ -382,8 +418,8 @@ void rv3029_write_time(const struct rtc_time *time)
 	uint8_t buffer[7];
 	uint8_t sreg;
 
-	/* Convert to BCD. */
-	rtc_time_to_bcd(&bcd_time, time);
+	/* Convert to BCD hardware format. */
+	rv3029_time_bin_to_bcd(&bcd_time, time);
 
 	/* Prepare the I2C write buffer. */
 	buffer[0] = bcd_time.second;
@@ -426,8 +462,8 @@ static void read_time_callback(struct twi_transfer *xfer, enum twi_status status
 	bcd_time.year = dev->xfer_buffer[6];
 	irq_restore(sreg);
 
-	/* Convert from BCD to binary and store in cache. */
-	rtc_time_from_bcd(&dev->now, &bcd_time);
+	/* Convert from BCD hardware format to binary and store in cache. */
+	rv3029_time_bcd_to_bin(&dev->now, &bcd_time);
 }
 
 /* Update the cached time. */
