@@ -31,14 +31,13 @@ LIBS:contrib
 LIBS:valves
 LIBS:rv3029c2
 LIBS:crystalosc
-LIBS:moistcontrol-cache
 EELAYER 27 0
 EELAYER END
 $Descr A3 16535 11693
 encoding utf-8
 Sheet 1 2
 Title "moistcontrol - lower board"
-Date "23 nov 2013"
+Date "16 dec 2013"
 Rev "1.0"
 Comp "Michael Buesch <m@bues.ch>"
 Comment1 ""
@@ -171,7 +170,7 @@ L ATMEGA8-P IC1
 U 1 1 5149CCE6
 P 3700 3300
 F 0 "IC1" H 3000 4550 50  0000 L BNN
-F 1 "ATMEGA8-P" H 4050 1900 50  0000 L BNN
+F 1 "ATMEGA8-A" H 4050 1900 50  0000 L BNN
 F 2 "DIL28" H 3100 1950 50  0001 C CNN
 F 3 "" H 3700 3300 60  0001 C CNN
 	1    3700 3300

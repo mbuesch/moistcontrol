@@ -31,14 +31,13 @@ LIBS:contrib
 LIBS:valves
 LIBS:rv3029c2
 LIBS:crystalosc
-LIBS:moistcontrol-cache
 EELAYER 27 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 2 2
 Title "moistcontrol - upper board"
-Date "23 nov 2013"
+Date "16 dec 2013"
 Rev "1.0"
 Comp "Michael Buesch <m@bues.ch>"
 Comment1 ""
@@ -479,7 +478,7 @@ L PCF8574 U3
 U 1 1 521DDC50
 P 2050 1550
 F 0 "U3" H 2320 2250 60  0000 C CNN
-F 1 "PCF8574" H 2440 852 60  0000 C CNN
+F 1 "PCF8574A" H 2440 852 60  0000 C CNN
 F 2 "" H 2050 1550 60  0000 C CNN
 F 3 "" H 2050 1550 60  0000 C CNN
 	1    2050 1550
