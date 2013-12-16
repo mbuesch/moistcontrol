@@ -19,6 +19,10 @@ enum flowerpot_config_flag {
 	 * If this bit is not set, logs will not be written.
 	 */
 	POT_FLG_LOG		= 0x02,
+	/* Verbose logging is enabled.
+	 * If this bit is not set, no verbose logs will be written.
+	 */
+	POT_FLG_LOGVERBOSE	= 0x04,
 };
 
 /* Configuration of one flower-pot. */

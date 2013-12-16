@@ -26,6 +26,7 @@ enum log_error {
 enum log_info {
 	LOG_INFO_DEBUG,			/* Generic debug message. */
 	LOG_INFO_CONTSTATCHG,		/* Controller status change */
+	LOG_INFO_WATERINGCHG,		/* The "watering" state changed. */
 };
 
 /* Construct a 'sensor_data' field. */

@@ -179,6 +179,9 @@ class PotWidget(QWidget):
 		yAdv += 1
 		self.logCheckBox = QCheckBox("Enable logging", self)
 		self.advancedGroup.layout().addWidget(self.logCheckBox, yAdv, 0, 1, 2)
+		yAdv += 1
+		self.verboseLogCheckBox = QCheckBox("Enable verbose logging", self)
+		self.advancedGroup.layout().addWidget(self.verboseLogCheckBox, yAdv, 0, 1, 2)
 
 		self.layout().setRowStretch(y, 1)
 
@@ -186,6 +189,7 @@ class PotWidget(QWidget):
 		self.enableCheckBox.stateChanged.connect(self.__enableChanged)
 		self.dowEnable.changed.connect(self.__dowEnableChanged)
 		self.logCheckBox.stateChanged.connect(self.__logChanged)
+		self.verboseLogCheckBox.stateChanged.connect(self.__logVerboseChanged)
 		self.minThreshold.valueChanged.connect(self.__minChanged)
 		self.maxThreshold.valueChanged.connect(self.__maxChanged)
 		self.startTimeCheckBox.stateChanged.connect(self.__startTimeChanged)
@@ -203,6 +207,9 @@ class PotWidget(QWidget):
 
 	def loggingEnabled(self):
 		return self.logCheckBox.checkState() == Qt.Checked
+
+	def verboseLoggingEnabled(self):
+		return self.verboseLogCheckBox.checkState() == Qt.Checked
 
 	def forceOpenValveActive(self):
 		return self.forceOpenButton.isDown()
@@ -276,6 +283,11 @@ class PotWidget(QWidget):
 	def __logChanged(self, newState):
 		if not self.ignoreChanges:
 			self.configChanged.emit(self.potNumber)
+		self.verboseLogCheckBox.setEnabled(newState == Qt.Checked)
+
+	def __logVerboseChanged(self, newState):
+		if not self.ignoreChanges:
+			self.configChanged.emit(self.potNumber)
 
 	def __minChanged(self, newValue):
 		if not self.ignoreChanges:
@@ -334,6 +346,10 @@ class PotWidget(QWidget):
 			self.logCheckBox.setCheckState(Qt.Checked)
 		else:
 			self.logCheckBox.setCheckState(Qt.Unchecked)
+		if msg.flags & msg.POT_FLG_LOGVERBOSE:
+			self.verboseLogCheckBox.setCheckState(Qt.Checked)
+		else:
+			self.verboseLogCheckBox.setCheckState(Qt.Unchecked)
 		self.minThreshold.setValue(msg.min_threshold)
 		self.maxThreshold.setValue(msg.max_threshold)
 		h, m, s = MsgContrPotConf.fromTimeOfDay(msg.start_time)

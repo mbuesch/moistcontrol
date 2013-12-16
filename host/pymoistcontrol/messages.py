@@ -264,6 +264,7 @@ class MsgContrConfFetch(Message):
 class MsgContrPotConf(Message):
 	POT_FLG_ENABLED		= 0x01
 	POT_FLG_LOG		= 0x02
+	POT_FLG_LOGVERBOSE	= 0x04
 
 	@classmethod
 	def toTimeOfDay(cls, hours, minutes, seconds):

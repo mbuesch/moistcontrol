@@ -138,6 +138,7 @@ class LogItemError(LogItem):
 class LogItemInfo(LogItem):
 	LOG_INFO_DEBUG			= 0
 	LOG_INFO_CONTSTATCHG		= 1
+	LOG_INFO_WATERINGCHG		= 2
 
 	def __init__(self, flags, timestamp, infoCode, infoData):
 		"""Class constructor."""
@@ -164,6 +165,12 @@ class LogItemInfo(LogItem):
 			stateName = controllerStateName(state)
 			return "Pot %d state machine transition to %s" %\
 				(potNumber + 1, stateName)
+		elif self.infoCode == self.LOG_INFO_WATERINGCHG:
+			potNumber = self.infoData & 0xF
+			state = bool(self.infoData & 0x80)
+			return "Pot %d watering %s" % \
+				(potNumber + 1,
+				 "started" if state else "stopped")
 		else:
 			return "Info message %d (%d)" %\
 				(self.infoCode, self.infoData)

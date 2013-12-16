@@ -108,6 +108,13 @@ static void pot_info(struct flowerpot *pot,
 	log_append(&log);
 }
 
+static void pot_info_verbose(struct flowerpot *pot,
+			     uint8_t log_class, uint8_t log_code, uint8_t log_data)
+{
+	if (pot_config(pot)->flags & POT_FLG_LOGVERBOSE)
+		pot_info(pot, log_class, log_code, log_data);
+}
+
 static void pot_state_enter(struct flowerpot *pot,
 			    enum flowerpot_state_id new_state)
 {
@@ -116,7 +123,7 @@ static void pot_state_enter(struct flowerpot *pot,
 	if (pot->state.state_id != new_state) {
 		pot->state.state_id = new_state;
 		data = ((uint8_t)new_state << 4) | (pot->nr & 0xF);
-		pot_info(pot, LOG_INFO, LOG_INFO_CONTSTATCHG, data);
+		pot_info_verbose(pot, LOG_INFO, LOG_INFO_CONTSTATCHG, data);
 	}
 }
 
@@ -216,12 +223,18 @@ static void pot_go_idle(struct flowerpot *pot)
 
 static void pot_start_watering(struct flowerpot *pot)
 {
+	pot_info(pot, LOG_INFO, LOG_INFO_WATERINGCHG,
+		 (pot->nr & 0x0F) | 0x80);
+
 	pot->state.is_watering = 1;
 	valve_open(pot);
 }
 
 static void pot_stop_watering(struct flowerpot *pot)
 {
+	pot_info(pot, LOG_INFO, LOG_INFO_WATERINGCHG,
+		 pot->nr & 0x0F);
+
 	pot->state.is_watering = 0;
 	valve_close(pot);
 	pot_go_idle(pot);
@@ -318,8 +331,8 @@ static void handle_pot(struct flowerpot *pot)
 			break;
 		}
 
-		/* Check if logging is requested for this pot. */
-		if (config->flags & POT_FLG_LOG) {
+		/* Check if verbose logging is requested for this pot. */
+		if (config->flags & POT_FLG_LOGVERBOSE) {
 			struct log_item log;
 
 			/* Get the current RTC time. */

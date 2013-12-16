@@ -123,6 +123,8 @@ class MainWidget(QWidget):
 			msg.flags |= msg.POT_FLG_ENABLED
 		if pot.loggingEnabled():
 			msg.flags |= msg.POT_FLG_LOG
+		if pot.verboseLoggingEnabled():
+			msg.flags |= msg.POT_FLG_LOGVERBOSE
 		return msg
 
 	def __makeMsg_ManMode(self):
