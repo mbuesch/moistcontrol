@@ -117,8 +117,7 @@ class MainWidget(QWidget):
 				      max_threshold = pot.getMaxThreshold(),
 				      start_time = pot.getStartTime(),
 				      end_time = pot.getEndTime(),
-				      dow_on_mask = pot.getDowEnableMask(),
-				      dow_ignoretime_mask = pot.getDowIgnoreTimeMask())
+				      dow_on_mask = pot.getDowEnableMask())
 		if pot.isEnabled():
 			msg.flags |= msg.POT_FLG_ENABLED
 		if pot.loggingEnabled():

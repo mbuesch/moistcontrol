@@ -73,8 +73,7 @@ class Message(SerialMessage):
 						     (rawMsg.payload[6] << 8),
 					end_time = rawMsg.payload[7] |
 						   (rawMsg.payload[8] << 8),
-					dow_on_mask = rawMsg.payload[9],
-					dow_ignoretime_mask = rawMsg.payload[10])
+					dow_on_mask = rawMsg.payload[9])
 			elif msgId == cls.MSG_CONTR_POT_CONF_FETCH:
 				msg = MsgContrPotConfFetch(pot_number = rawMsg.payload[1])
 			elif msgId == cls.MSG_CONTR_POT_STATE:
@@ -289,8 +288,7 @@ class MsgContrPotConf(Message):
 		     max_threshold = 0,
 		     start_time = 0,
 		     end_time = 0,
-		     dow_on_mask = 0,
-		     dow_ignoretime_mask = 0):
+		     dow_on_mask = 0):
 		self.pot_number = pot_number
 		self.flags = flags
 		self.min_threshold = min_threshold
@@ -298,7 +296,6 @@ class MsgContrPotConf(Message):
 		self.start_time = start_time
 		self.end_time = end_time
 		self.dow_on_mask = dow_on_mask
-		self.dow_ignoretime_mask = dow_ignoretime_mask
 		Message.__init__(self)
 
 	def getType(self):
@@ -314,8 +311,7 @@ class MsgContrPotConf(Message):
 			       (self.start_time >> 8) & 0xFF,
 			       self.end_time & 0xFF,
 			       (self.end_time >> 8) & 0xFF,
-			       self.dow_on_mask & 0xFF,
-			       self.dow_ignoretime_mask & 0xFF, ])
+			       self.dow_on_mask & 0xFF, ])
 
 	def toText(self):
 		return "[POT_%d_CONFIG]\n" \
@@ -324,16 +320,14 @@ class MsgContrPotConf(Message):
 		       "max_threshold=%d\n" \
 		       "start_time=%d\n" \
 		       "end_time=%d\n" \
-		       "dow_on_mask=%d\n" \
-		       "dow_ignoretime_mask=%d\n" % \
+		       "dow_on_mask=%d\n" % \
 		       (self.pot_number,
 			self.flags,
 			self.min_threshold,
 			self.max_threshold,
 			self.start_time,
 			self.end_time,
-			self.dow_on_mask,
-			self.dow_ignoretime_mask)
+			self.dow_on_mask)
 
 	def fromText(self, text):
 		try:
@@ -351,8 +345,6 @@ class MsgContrPotConf(Message):
 						 "end_time")
 			self.dow_on_mask = p.getint("POT_%d_CONFIG" % self.pot_number,
 						    "dow_on_mask")
-			self.dow_ignoretime_mask = p.getint("POT_%d_CONFIG" % self.pot_number,
-							    "dow_ignoretime_mask")
 		except configparser.Error as e:
 			raise Error(str(e))
 

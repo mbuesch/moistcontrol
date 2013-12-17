@@ -71,7 +71,6 @@ static struct controller cont;
 			.to		= (time_of_day_t)(long)-1,	\
 		},							\
 		.dow_on_mask		= 0x7F,				\
-		.dow_ignoretime_mask	= 0,				\
 	}
 
 static struct controller_config EEMEM eeprom_cont_config = {
@@ -289,17 +288,14 @@ static void handle_pot(struct flowerpot *pot)
 			break;
 		}
 
-		/* Check active range, if requested. */
-		if (!(config->dow_ignoretime_mask & dow_mask)) {
-			/* Check if we are in the active range. */
-			tod = rtc_get_time_of_day(&rtc);
-			if (time_of_day_before(tod, config->active_range.from) ||
-			    time_of_day_after(tod, config->active_range.to)) {
-				/* Current time is not in the active range.
-				 * Don't run.
-				 */
-				break;
-			}
+		/* Check if we are in the active range. */
+		tod = rtc_get_time_of_day(&rtc);
+		if (time_of_day_before(tod, config->active_range.from) ||
+		    time_of_day_after(tod, config->active_range.to)) {
+			/* Current time is not in the active range.
+			 * Don't run.
+			 */
+			break;
 		}
 
 		/* Check, if the next measurement is pending. */

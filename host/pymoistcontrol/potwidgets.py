@@ -134,12 +134,6 @@ class PotWidget(QWidget):
 		self.layout().addLayout(hbox, y, 1)
 		y += 1
 
-		label = QLabel("Ignore times on:")
-		self.layout().addWidget(label, y, 0)
-		self.dowIgnoreTime = DayOfWeekSelectWidget(self)
-		self.layout().addWidget(self.dowIgnoreTime, y, 1)
-		y += 1
-
 		hbox = QHBoxLayout()
 		self.forceOpenButton = QPushButton("Force-open valve", self)
 		hbox.addWidget(self.forceOpenButton)
@@ -196,7 +190,6 @@ class PotWidget(QWidget):
 		self.startTime.timeChanged.connect(self.__startTimeChanged)
 		self.endTimeCheckBox.stateChanged.connect(self.__endTimeChanged)
 		self.endTime.timeChanged.connect(self.__endTimeChanged)
-		self.dowIgnoreTime.changed.connect(self.__dowIgnoreTimeChanged)
 		self.forceOpenButton.pressed.connect(self.__forceOpenPressed)
 		self.forceOpenButton.released.connect(self.__forceOpenReleased)
 		self.forceStopWateringButton.pressed.connect(self.__forceStopWaterPressed)
@@ -244,9 +237,6 @@ class PotWidget(QWidget):
 			# End time disabled.
 			# Return the highest possible time.
 			return MsgContrPotConf.toTimeOfDay(23, 59, 59)
-
-	def getDowIgnoreTimeMask(self):
-		return boolListToBitMask(self.dowIgnoreTime.getStates())
 
 	def getMinThreshold(self):
 		return self.minThreshold.value()
@@ -319,10 +309,6 @@ class PotWidget(QWidget):
 				self.ignoreChanges -= 1
 			self.configChanged.emit(self.potNumber)
 
-	def __dowIgnoreTimeChanged(self):
-		if not self.ignoreChanges:
-			self.configChanged.emit(self.potNumber)
-
 	def __forceOpenPressed(self):
 		if not self.ignoreChanges:
 			self.manModeChanged.emit()
@@ -365,7 +351,6 @@ class PotWidget(QWidget):
 			self.endTimeCheckBox.setCheckState(Qt.Checked)
 			self.endTime.setTime(QTime(h, m, s))
 		self.dowEnable.setStates(bitMaskToBoolList(msg.dow_on_mask))
-		self.dowIgnoreTime.setStates(bitMaskToBoolList(msg.dow_ignoretime_mask))
 		self.ignoreChanges -= 1
 
 	def handlePotStateMessage(self, msg):

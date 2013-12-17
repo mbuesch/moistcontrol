@@ -41,11 +41,6 @@ struct flowerpot_config {
 	 * that weekday.
 	 */
 	uint8_t dow_on_mask;
-	/* Day-of-week ignore-time mask. Bit 0 -> monday, etc...
-	 * If a bit is set, the regulator will ignore start_time
-	 * and end_time for this day.
-	 */
-	uint8_t dow_ignoretime_mask;
 };
 
 enum controller_global_flags {
