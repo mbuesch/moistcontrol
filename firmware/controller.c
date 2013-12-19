@@ -651,8 +651,8 @@ void controller_work(void)
 		 * Update the EEPROM contents.
 		 * This only updates the bytes that changed. (reduces wearout)
 		 */
-		eeprom_update_block(&cont.config, &eeprom_cont_config,
-				    sizeof(cont.config));
+		eeprom_update_block_wdtsafe(&cont.config, &eeprom_cont_config,
+					    sizeof(cont.config));
 	}
 
 	if (cont.config.global.flags & CONTR_FLG_ENABLE) {
@@ -679,8 +679,8 @@ void controller_init(void)
 
 	/* Read the configuration from EEPROM. */
 	memset(&cont, 0, sizeof(cont));
-	eeprom_read_block(&cont.config, &eeprom_cont_config,
-			  sizeof(cont.config));
+	eeprom_read_block_wdtsafe(&cont.config, &eeprom_cont_config,
+				  sizeof(cont.config));
 
 	/* Initialize and reset all pot states. */
 	for (i = 0; i < ARRAY_SIZE(cont.pots); i++) {

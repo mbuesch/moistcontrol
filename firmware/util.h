@@ -125,6 +125,10 @@ void panic(void) noreturn;
 #define PANIC_ON(condition)	do { if (condition) panic(); } while (0)
 
 
+void eeprom_read_block_wdtsafe(void *_dst, const void *_src, size_t n);
+void eeprom_update_block_wdtsafe(const void *_src, void *dst, size_t n);
+
+
 /* Disable interrupts globally. */
 static inline void irq_disable(void)
 {

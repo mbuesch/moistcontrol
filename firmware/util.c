@@ -21,6 +21,7 @@
 #include "util.h"
 
 #include <avr/wdt.h>
+#include <avr/eeprom.h>
 
 
 /* Bitnumber to bitmask lookup table. */
@@ -44,4 +45,32 @@ void panic(void)
 {
 	//TODO: Try to get an error message out.
 	reboot();
+}
+
+/* Read a block of data from the EEPROM.
+ * This function resets the watchdog timer after each processed byte.
+ */
+void eeprom_read_block_wdtsafe(void *_dst, const void *_src, size_t n)
+{
+	uint8_t *dst = _dst;
+	const uint8_t *src = _src;
+
+	for ( ; n; n--, dst++, src++) {
+		*dst = eeprom_read_byte(src);
+		wdt_reset();
+	}
+}
+
+/* Update a block of data in the EEPROM.
+ * This function resets the watchdog timer after each processed byte.
+ */
+void eeprom_update_block_wdtsafe(const void *_src, void *_dst, size_t n)
+{
+	const uint8_t *src = _src;
+	uint8_t *dst = _dst;
+
+	for ( ; n; n--, dst++, src++) {
+		eeprom_update_byte(dst, *src);
+		wdt_reset();
+	}
 }
