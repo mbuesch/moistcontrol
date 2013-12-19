@@ -39,18 +39,18 @@
 /* Message IDs of control messages transferred to and from
  * the host over serial wire. */
 enum user_message_id {
-	MSG_LOG,
-	MSG_LOG_FETCH,
-	MSG_RTC,
-	MSG_RTC_FETCH,
-	MSG_CONTR_CONF,
-	MSG_CONTR_CONF_FETCH,
-	MSG_CONTR_POT_CONF,
-	MSG_CONTR_POT_CONF_FETCH,
-	MSG_CONTR_POT_STATE,
-	MSG_CONTR_POT_STATE_FETCH,
-	MSG_MAN_MODE,
-	MSG_MAN_MODE_FETCH,
+	MSG_LOG,			/* Log message */
+	MSG_LOG_FETCH,			/* Log message request */
+	MSG_RTC,			/* RTC time */
+	MSG_RTC_FETCH,			/* RTC time request */
+	MSG_CONTR_CONF,			/* Global configuration */
+	MSG_CONTR_CONF_FETCH,		/* Global configuration request */
+	MSG_CONTR_POT_CONF,		/* Pot configuration */
+	MSG_CONTR_POT_CONF_FETCH,	/* Pot configuration request */
+	MSG_CONTR_POT_STATE,		/* Pot state */
+	MSG_CONTR_POT_STATE_FETCH,	/* Pot state request */
+	MSG_MAN_MODE,			/* Manual mode settings */
+	MSG_MAN_MODE_FETCH,		/* Manual mode settings request */
 };
 
 /* Payload of host communication messages. */
@@ -59,22 +59,22 @@ struct msg_payload {
 	uint8_t id;
 
 	union {
-		/* Log item. */
+		/* Log message. */
 		struct {
 			struct log_item item;
 		} _packed log;
 
-		/* RTC status. */
+		/* RTC time. */
 		struct {
 			struct rtc_time time;
 		} _packed rtc;
 
-		/* Global controller config. */
+		/* Global controller configuration. */
 		struct {
 			struct controller_global_config conf;
 		} _packed contr_conf;
 
-		/* Controller flower pot config. */
+		/* Controller flower pot configuration. */
 		struct {
 			uint8_t pot_number;
 			struct flowerpot_config conf;
@@ -86,7 +86,7 @@ struct msg_payload {
 			struct flowerpot_state state;
 		} _packed contr_pot_state;
 
-		/* Manual mode control. */
+		/* Manual mode settings. */
 		struct {
 			uint8_t force_stop_watering_mask;
 			uint8_t valve_manual_mask;
