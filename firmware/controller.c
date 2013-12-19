@@ -31,36 +31,88 @@
 #include <avr/eeprom.h>
 
 
-#define FIRST_CTRL_INTERVAL_SEC		10
+/* Controller interval time, in seconds.
+ * This is the time the controller waits between measurements.
+ */
 #define CTRL_INTERVAL_SEC		60
+/* First wait time, in seconds.
+ * This is the time the controller waits before doing the first
+ * measurement after a controller reset.
+ */
+#define FIRST_CTRL_INTERVAL_SEC		10
 
+/* The time a valve is held "opened" when watering.
+ * In milliseconds.
+ */
 #define VALVE_OPEN_MS			3000
+/* The time a value is held "closed" when watering before doing
+ * the next measurement. In milliseconds.
+ */
 #define VALVE_CLOSE_MS			30000
 
 
+/* Flowerpot controller context data structure. */
 struct flowerpot {
+	/* The ID-number of this pot. */
 	uint8_t nr;
+	/* The current state of the controller state machine
+	 * for this pot.
+	 */
 	struct flowerpot_state state;
+	/* Timestamp for the next measurement. */
 	jiffies_t next_measurement;
 
+	/* Timer variable for the VALVE_OPEN_MS and
+	 * VALVE_CLOSE_MS times.
+	 */
 	jiffies_t valve_timer;
+	/* Enable-state of manual-mode for this pot's valve.
+	 * Manual mode is enabled, if this bit is 1.
+	 */
 	bool valve_manual_en;
+	/* Manual-mode state for this pot's valve.
+	 * The valve is force opened, if this bit is 1
+	 * and manual mode is enabled.
+	 * The valve is force closed, if this bit is 0
+	 * and manual mode is enabled.
+	 */
 	bool valve_manual_state;
+	/* Automatic-mode state for this pot's valve.
+	 * The valve is opened, if this bit is 1
+	 * and manual mode is disabled.
+	 * The valve is closed, if this bit is 0
+	 * and manual mode is disabled.
+	 */
 	bool valve_auto_state;
 };
 
+/* Controller context data structure. */
 struct controller {
+	/* The active controller configuration.
+	 * This is a RAM-copy of the EEPROM contents.
+	 */
 	struct controller_config config;
+
+	/* The instances of the flowerpot contexts. */
 	struct flowerpot pots[MAX_NR_FLOWERPOTS];
+	/* Counter variable for the flowerpot cycle. */
 	uint8_t current_pot;
 
+	/* EEPROM-update flag.
+	 * If this bit is set, an EEPROM update is pending.
+	 * The EEPROM update will be performed as soon as
+	 * the timer has expired.
+	 */
 	bool eeprom_update_required;
+	/* The EEPROM-update timer. */
 	jiffies_t eeprom_update_time;
 };
 
+/* Instance of the controller context. */
 static struct controller cont;
 
 
+/* Initialization helper macro for pot config. */
 #define POT_DEFAULT_CONFIG						\
 	{								\
 		.flags			= 0,				\
@@ -73,6 +125,7 @@ static struct controller cont;
 		.dow_on_mask		= 0x7F,				\
 	}
 
+/* The EEPROM memory, for storage of configuration values. */
 static struct controller_config EEMEM eeprom_cont_config = {
 	.pots[0] = POT_DEFAULT_CONFIG,
 	.pots[1] = POT_DEFAULT_CONFIG,
@@ -88,25 +141,44 @@ static struct controller_config EEMEM eeprom_cont_config = {
 };
 
 
+/* Get a pointer to the configuration structure for a pot.
+ * pot: A pointer to the flowerpot.
+ */
 static inline struct flowerpot_config * pot_config(const struct flowerpot *pot)
 {
 	return &cont.config.pots[pot->nr];
 }
 
+/* Emit a log message, if logging is enabled.
+ * pot: A pointer to the flowerpot.
+ * log_class: The logging class to use. May be LOG_INFO or LOG_ERROR.
+ * log_code: The info or error code.
+ * log_data: Additional user-data for this log message.
+ */
 static void pot_info(struct flowerpot *pot,
 		     uint8_t log_class, uint8_t log_code, uint8_t log_data)
 {
 	struct log_item log;
 
-	if (!(pot_config(pot)->flags & POT_FLG_LOG))
+	if (!(pot_config(pot)->flags & POT_FLG_LOG)) {
+		/* Logging is disabled. Do not emit the message. */
 		return;
+	}
 
+	/* Construct the log data structure. */
 	log_init(&log, log_class);
 	log.code = log_code;
 	log.data = log_data;
+	/* Append the log message to the log queue. */
 	log_append(&log);
 }
 
+/* Emit a log message, if verbose logging is enabled.
+ * pot: A pointer to the flowerpot.
+ * log_class: The logging class to use. May be LOG_INFO or LOG_ERROR.
+ * log_code: The info or error code.
+ * log_data: Additional user-data for this log message.
+ */
 static void pot_info_verbose(struct flowerpot *pot,
 			     uint8_t log_class, uint8_t log_code, uint8_t log_data)
 {
@@ -114,18 +186,32 @@ static void pot_info_verbose(struct flowerpot *pot,
 		pot_info(pot, log_class, log_code, log_data);
 }
 
+/* Switch the controller state machine into another state.
+ * pot: A pointer to the flowerpot.
+ * new_state: The new state to switch to.
+ */
 static void pot_state_enter(struct flowerpot *pot,
 			    enum flowerpot_state_id new_state)
 {
 	uint8_t data;
 
+	/* Switch state, if new_state is different from the current state. */
 	if (pot->state.state_id != new_state) {
 		pot->state.state_id = new_state;
+
+		/* Emit a verbose log message for this switch operation.
+		 * The log data holds the pot number in the lower 4 bits
+		 * and the new state number in the upper 4 bits.
+		 */
 		data = ((uint8_t)new_state << 4) | (pot->nr & 0xF);
 		pot_info_verbose(pot, LOG_INFO, LOG_INFO_CONTSTATCHG, data);
 	}
 }
 
+/* Scale the raw sensor ADC value into the fixed 0-255 moisture range.
+ * res: Pointer to the sensor result (ADC value).
+ * Returns the 8-bit scaled value.
+ */
 static uint8_t scale_sensor_val(const struct sensor_result *res)
 {
 	uint16_t raw_value = res->value;
@@ -158,6 +244,10 @@ static uint8_t scale_sensor_val(const struct sensor_result *res)
 	return scaled_value;
 }
 
+/* Get the output extender bit-number for a valve.
+ * nr: The valve number to get the extender-bit-number for.
+ * Returns the output extender bit value.
+ */
 static uint8_t valvenr_to_bitnr(uint8_t nr)
 {
 	switch (nr) {
@@ -177,6 +267,9 @@ static uint8_t valvenr_to_bitnr(uint8_t nr)
 	return 0;
 }
 
+/* Write the current valve state out to the valve hardware.
+ * pot: A pointer to the flowerpot.
+ */
 static void valve_state_commit(struct flowerpot *pot)
 {
 	uint8_t bitnr = valvenr_to_bitnr(pot->nr);
@@ -193,52 +286,95 @@ static void valve_state_commit(struct flowerpot *pot)
 	ioext_commit();
 }
 
+/* Set the automatic-state of a valve to "closed"
+ * and write the state to the hardware.
+ * pot: A pointer to the flowerpot.
+ */
 static void valve_close(struct flowerpot *pot)
 {
 	pot->valve_auto_state = 0;
 	valve_state_commit(pot);
 }
 
+/* Set the automatic-state of a valve to "opened"
+ * and write the state to the hardware.
+ * Also start the valve-open-timer and switch the state machine
+ * into the "waiting-for-valve" state.
+ * pot: A pointer to the flowerpot.
+ */
 static void valve_open(struct flowerpot *pot)
 {
 	pot->valve_auto_state = 1;
 	valve_state_commit(pot);
 
+	/* Set state machine to waiting-for-valve. */
 	pot->valve_timer = jiffies_get() + msec_to_jiffies(VALVE_OPEN_MS);
 	pot_state_enter(pot, POT_WAITING_FOR_VALVE);
 }
 
+/* Start a sensor measurement and switch the state machine
+ * into the "measuring" state.
+ * pot: A pointer to the flowerpot.
+ */
 static void pot_start_measurement(struct flowerpot *pot)
 {
 	sensor_start(pot->nr);
 	pot_state_enter(pot, POT_MEASURING);
 }
 
+/* Switch the state machine into the "idle" state.
+ * Also schedule the next measurement.
+ * pot: A pointer to the flowerpot.
+ */
 static void pot_go_idle(struct flowerpot *pot)
 {
 	pot->next_measurement = jiffies_get() + sec_to_jiffies(CTRL_INTERVAL_SEC);
 	pot_state_enter(pot, POT_IDLE);
 }
 
+/* Start watering.
+ * This will set the "watering" state and open the valve.
+ * pot: A pointer to the flowerpot.
+ */
 static void pot_start_watering(struct flowerpot *pot)
 {
+	/* Emit a "watering started" log message.
+	 * The lower 4 bits of the log data is the pot number
+	 * and the 7th bit is the "watering active" bit.
+	 */
 	pot_info(pot, LOG_INFO, LOG_INFO_WATERINGCHG,
 		 (pot->nr & 0x0F) | 0x80);
 
+	/* Go into watering state and open the valve. */
 	pot->state.is_watering = 1;
 	valve_open(pot);
 }
 
+/* Stop watering.
+ * This will reset the "watering" state and close the valve.
+ * Additionally it will reset the controller state machine to "idle".
+ * pot: A pointer to the flowerpot.
+ */
 static void pot_stop_watering(struct flowerpot *pot)
 {
+	/* Emit a "watering stopped" log message.
+	 * The lower 4 bits of the log data is the pot number
+	 * and the 7th bit is the "watering active" bit.
+	 */
 	pot_info(pot, LOG_INFO, LOG_INFO_WATERINGCHG,
 		 pot->nr & 0x0F);
 
+	/* Go out of watering state, close the valve and
+	 * set the state machine to "idle"
+	 */
 	pot->state.is_watering = 0;
 	valve_close(pot);
 	pot_go_idle(pot);
 }
 
+/* Reset the state machine on one pot.
+ * pot: A pointer to the flowerpot.
+ */
 static void pot_reset(struct flowerpot *pot)
 {
 	if (pot->state.state_id == POT_MEASURING) {
@@ -248,14 +384,20 @@ static void pot_reset(struct flowerpot *pot)
 		sensor_cancel();
 	}
 
+	/* Reset all state values. */
 	pot->state.is_watering = 0;
 	pot->next_measurement = jiffies_get() + sec_to_jiffies(FIRST_CTRL_INTERVAL_SEC);
 	pot_state_enter(pot, POT_IDLE);
 	pot->valve_manual_en = 0;
 	pot->valve_manual_state = 0;
+
+	/* Make sure the valve is closed. */
 	valve_close(pot);
 }
 
+/* The pot controller state machine routine.
+ * pot: A pointer to the flowerpot.
+ */
 static void handle_pot(struct flowerpot *pot)
 {
 	struct sensor_result result;
@@ -274,7 +416,7 @@ static void handle_pot(struct flowerpot *pot)
 		/* Idle: We are not doing anything, yet. */
 
 		if (!(config->flags & POT_FLG_ENABLED)) {
-			/* Pot is disabled. */
+			/* This pot is disabled. Don't do anything. */
 			break;
 		}
 
@@ -284,11 +426,11 @@ static void handle_pot(struct flowerpot *pot)
 		dow_mask = BITMASK8(rtc.day_of_week);
 
 		if (!(config->dow_on_mask & dow_mask)) {
-			/* Pot is disabled on today's weekday. */
+			/* This pot is disabled on today's weekday. */
 			break;
 		}
 
-		/* Check if we are in the active range. */
+		/* Check if we are in the active-time-range. */
 		tod = rtc_get_time_of_day(&rtc);
 		if (time_of_day_before(tod, config->active_range.from) ||
 		    time_of_day_after(tod, config->active_range.to)) {
@@ -299,8 +441,10 @@ static void handle_pot(struct flowerpot *pot)
 		}
 
 		/* Check, if the next measurement is pending. */
-		if (time_before(now, pot->next_measurement))
+		if (time_before(now, pot->next_measurement)) {
+			/* No. Don't run, yet. */
 			break;
+		}
 
 		/* It's time to start a new measurement. */
 		pot_state_enter(pot, POT_START_MEASUREMENT);
@@ -315,7 +459,7 @@ static void handle_pot(struct flowerpot *pot)
 			break;
 		}
 
-		/* Start the controller cycle. */
+		/* Start a measurement on this pot, now. */
 		pot_start_measurement(pot);
 		break;
 	case POT_MEASURING:
@@ -327,7 +471,9 @@ static void handle_pot(struct flowerpot *pot)
 			break;
 		}
 
-		/* Check if verbose logging is requested for this pot. */
+		/* Check if verbose logging is requested for this pot
+		 * and send the raw measurement result.
+		 */
 		if (config->flags & POT_FLG_LOGVERBOSE) {
 			struct log_item log;
 
@@ -352,11 +498,20 @@ static void handle_pot(struct flowerpot *pot)
 		pot->state.last_measured_value = sensor_val;
 
 		if (pot->state.is_watering) {
+			/* We are watering. Check if we reached the upper threshold.
+			 * If so, stop watering.
+			 * If not, go on watering.
+			 */
 			if (sensor_val >= config->max_threshold)
 				pot_stop_watering(pot);
 			else
 				valve_open(pot);
 		} else {
+			/* We are not watering, yet. Check if we dropped below
+			 * the lower threshold.
+			 * If so, start watering.
+			 * If not, don't do anything and go idle.
+			 */
 			if (sensor_val < config->min_threshold)
 				pot_start_watering(pot);
 			else
@@ -386,6 +541,9 @@ static void handle_pot(struct flowerpot *pot)
 	}
 }
 
+/* Completely reset all controllers.
+ * This resets all state machines and the corresponding hardware.
+ */
 static void controller_reset(void)
 {
 	uint8_t i;
@@ -395,11 +553,21 @@ static void controller_reset(void)
 	cont.current_pot = 0;
 }
 
+/* Get the controller configuration.
+ * Copies the current config into "dest".
+ * dest: Pointer to the destination buffer.
+ */
 void controller_get_config(struct controller_config *dest)
 {
 	*dest = cont.config;
 }
 
+/* Set a new controller configuration.
+ * Copies the "new_config" into the current config
+ * and schedules an EEPROM update.
+ * The affected controllers are reset, if the configuration changed.
+ * new_config: Pointer to the new configuration.
+ */
 void controller_update_config(const struct controller_config *new_config)
 {
 	struct controller_config *active;
@@ -408,6 +576,7 @@ void controller_update_config(const struct controller_config *new_config)
 	/* Get pointer to the currently active configuration. */
 	active = &cont.config;
 
+	/* Check which part of the config changed, if any. */
 	if (memcmp(&new_config->global, &active->global,
 		   sizeof(new_config->global)) == 0) {
 		/* Global config did not change.
@@ -437,6 +606,10 @@ void controller_update_config(const struct controller_config *new_config)
 	cont.eeprom_update_required = 1;
 }
 
+/* Get the state information for a given pot.
+ * pot_number: The number of the pot to get the state for.
+ * state: A pointer to the buffer the state will be copied into.
+ */
 void controller_get_pot_state(uint8_t pot_number,
 			      struct flowerpot_state *state)
 {
@@ -444,6 +617,11 @@ void controller_get_pot_state(uint8_t pot_number,
 		*state = cont.pots[pot_number].state;
 }
 
+/* Set the "manual mode" control bits.
+ * force_stop_watering_mask: A bitmask of pots to force-stop watering on.
+ * valve_manual_mask: A bitmask of pots to enable manual valve control on.
+ * valve_manual_state: A bitmask of manual-mode valve states.
+ */
 void controller_manual_mode(uint8_t force_stop_watering_mask,
 			    uint8_t valve_manual_mask,
 			    uint8_t valve_manual_state)
@@ -463,6 +641,7 @@ void controller_manual_mode(uint8_t force_stop_watering_mask,
 	}
 }
 
+/* The main controller routine. */
 void controller_work(void)
 {
 	if (cont.eeprom_update_required &&
@@ -487,16 +666,23 @@ void controller_work(void)
 	}
 }
 
+/* Initialization of the controller data structures and hardware. */
 void controller_init(void)
 {
 	struct flowerpot *pot;
 	uint8_t i;
 
+	/* Initialize the output extender hardware (shift register).
+	 * All valves are connected through this extender.
+	 */
 	ioext_init(1);
 
+	/* Read the configuration from EEPROM. */
 	memset(&cont, 0, sizeof(cont));
 	eeprom_read_block(&cont.config, &eeprom_cont_config,
 			  sizeof(cont.config));
+
+	/* Initialize and reset all pot states. */
 	for (i = 0; i < ARRAY_SIZE(cont.pots); i++) {
 		pot = &cont.pots[i];
 
