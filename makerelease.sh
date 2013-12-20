@@ -15,7 +15,7 @@ done
 
 hook_get_version()
 {
-	local file="$1/host/moistcontrol-gui"
+	local file="$1/host/pymoistcontrol/util.py"
 	local v="$(cat "$file" | grep -e VERSION | head -n1 | awk '{print $3;}' | cut -d'"' -f2)"
 	version=v"$v"
 }
