@@ -14,6 +14,9 @@ struct sensor_result {
 	uint16_t value;
 };
 
+/* The largest sensor ADC value. */
+#define SENSOR_MAX	0x3FF
+
 void sensor_start(uint8_t nr);
 void sensor_cancel(void);
 bool sensor_poll(struct sensor_result *res);

@@ -106,7 +106,7 @@ class LogItem(object):
 		day = clamp((self.timestamp >> 17) & 0x1F, 0, 30)
 		month = clamp((self.timestamp >> 22) & 0x0F, 0, 11)
 		year = clamp((self.timestamp >> 26) & 0x3F, 0, 99)
-		return QDateTime(QDate(year + 2000, month, day),
+		return QDateTime(QDate(year + 2000, month + 1, day + 1),
 				 QTime(hour, minute, second))
 
 	@property
@@ -116,6 +116,8 @@ class LogItem(object):
 		return bool(self.flags & self.LOG_OVERFLOW)
 
 class LogItemError(LogItem):
+	LOG_ERR_SENSOR			= 0
+
 	def __init__(self, flags, timestamp, errorCode, errorData):
 		"""Class constructor."""
 
@@ -133,7 +135,14 @@ class LogItemError(LogItem):
 	def getText(self):
 		"""Get a string representation of this log item."""
 
-		return "Error %d (%d) occurred" % (self.errorCode, self.errorData)
+		if self.errorCode == self.LOG_ERR_SENSOR:
+			potNumber = self.errorData & 0xF
+			return "Error: Measurement at pot %d returned "\
+				"an implausible result." %\
+				(potNumber + 1)
+		else:
+			return "Error %d (%d) occurred" %\
+				(self.errorCode, self.errorData)
 
 class LogItemInfo(LogItem):
 	LOG_INFO_DEBUG			= 0

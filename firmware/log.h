@@ -20,7 +20,7 @@ enum log_type_flags {
 };
 
 enum log_error {
-	LOG_ERR_xxx, //XXX
+	LOG_ERR_SENSOR,			/* Sensor short circuit. */
 };
 
 enum log_info {

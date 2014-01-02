@@ -135,8 +135,8 @@ static struct controller_config EEMEM eeprom_cont_config = {
 	.pots[5] = POT_DEFAULT_CONFIG,
 	.global = {
 		.flags			= CONTR_FLG_ENABLE,
-		.sensor_lowest_value	= 0x000,
-		.sensor_highest_value	= 0x3FF,
+		.sensor_lowest_value	= 0,
+		.sensor_highest_value	= SENSOR_MAX,
 	},
 };
 
@@ -357,17 +357,19 @@ static void pot_start_watering(struct flowerpot *pot)
  */
 static void pot_stop_watering(struct flowerpot *pot)
 {
-	/* Emit a "watering stopped" log message.
-	 * The lower 4 bits of the log data is the pot number
-	 * and the 7th bit is the "watering active" bit.
-	 */
-	pot_info(pot, LOG_INFO, LOG_INFO_WATERINGCHG,
-		 pot->nr & 0x0F);
+	if (pot->state.is_watering) {
+		/* Emit a "watering stopped" log message.
+		 * The lower 4 bits of the log data is the pot number
+		 * and the 7th bit is the "watering active" bit.
+		 */
+		pot_info(pot, LOG_INFO, LOG_INFO_WATERINGCHG,
+			 pot->nr & 0x0F);
 
-	/* Go out of watering state, close the valve and
-	 * set the state machine to "idle"
-	 */
-	pot->state.is_watering = 0;
+		/* Go out of watering state, close the valve and
+		 * set the state machine to "idle"
+		 */
+		pot->state.is_watering = 0;
+	}
 	valve_close(pot);
 	pot_go_idle(pot);
 }
@@ -496,6 +498,17 @@ static void handle_pot(struct flowerpot *pot)
 		sensor_val = scale_sensor_val(&result);
 		pot->state.last_measured_raw_value = result.value;
 		pot->state.last_measured_value = sensor_val;
+
+		/* Sensor value sanity check.
+		 * Too low and too big values are rejected. These values
+		 * indicate a short circuit or cable break.
+		 */
+		if (result.value < 16 || result.value > (SENSOR_MAX - 16)) {
+			pot_info(pot, LOG_ERROR, LOG_ERR_SENSOR, pot->nr);
+			/* Force-stop watering and bail to idle state. */
+			pot_stop_watering(pot);
+			break;
+		}
 
 		if (pot->state.is_watering) {
 			/* We are watering. Check if we reached the upper threshold.
