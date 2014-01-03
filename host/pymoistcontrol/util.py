@@ -18,7 +18,7 @@ except ImportError as e:
 
 
 # Program version number
-VERSION			= "0.1"
+VERSION			= "1.0"
 # Maximum number of flowerpots available.
 MAX_NR_FLOWERPOTS	= 6
 
