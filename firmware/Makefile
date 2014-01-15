@@ -84,7 +84,8 @@ WARN_CFLAGS		= -Wall -Wextra -Wno-unused-parameter -Wswitch-enum \
 
 CFLAGS			+= -mmcu=$(GCC_ARCH) -std=c99 -g -O$(O) $(WARN_CFLAGS) \
 			  "-Dinline=inline __attribute__((__always_inline__))" \
-			  -fshort-enums -DF_CPU=$(F_CPU)
+			  -fshort-enums -DF_CPU=$(F_CPU) \
+			  -flto
 
 BIN			:= $(NAME).bin
 HEX			:= $(NAME).hex
@@ -149,7 +150,7 @@ all: $(HEX)
 	$(QUIET_CC) $(CFLAGS) -S $*.c
 
 $(BIN): $(call OBJS,$(SRCS))
-	$(QUIET_CC) $(CFLAGS) -o $(BIN) $(call OBJS,$(SRCS)) $(LDFLAGS) $(LDFLAGS)
+	$(QUIET_CC) $(CFLAGS) -o $(BIN) -fwhole-program $(call OBJS,$(SRCS)) $(LDFLAGS)
 
 $(HEX): $(BIN)
 	$(QUIET_OBJCOPY) -R.eeprom -O ihex $(BIN) $(HEX)
