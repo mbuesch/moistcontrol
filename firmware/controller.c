@@ -25,6 +25,7 @@
 #include "rv3029.h"
 #include "ioext.h"
 #include "log.h"
+#include "notify_led.h"
 
 #include <string.h>
 
@@ -51,14 +52,32 @@
 #define VALVE_CLOSE_MS			30000
 
 
+/* The watering-watchdog timeout, in seconds.
+ * If the watchdog times out, an error is assumed and watering
+ * of the affected pot is stopped.
+ */
+#define WATCHDOG_TIMEOUT_SEC		300
+/* The watering-watchdog retrigger threshold.
+ * If the measured value raised by this threshold, the watchdog
+ * will be retriggered.
+ * This value is a percentage of the regulator range. The range is
+ * max_threshold minus min_threshold.
+ */
+#define WATCHDOG_THRESHOLD_PERCENT	15
+
+
 /* Flowerpot controller context data structure. */
 struct flowerpot {
 	/* The ID-number of this pot. */
 	uint8_t nr;
-	/* The current state of the controller state machine
+	/* The world-visible state of the controller state machine
 	 * for this pot.
 	 */
 	struct flowerpot_state state;
+	/* The remanent state.
+	 * Remanent means it is also stored in EEPROM.
+	 */
+	struct flowerpot_remanent_state rem_state;
 	/* Timestamp for the next measurement. */
 	jiffies_t next_measurement;
 
@@ -84,6 +103,17 @@ struct flowerpot {
 	 * and manual mode is disabled.
 	 */
 	bool valve_auto_state;
+
+	/* The timeout time of the watering watchdog.
+	 * This is set to the current time plus the relative timeout
+	 * value, when watering starts.
+	 */
+	jiffies_t watering_watchdog_timeout;
+	/* The watering watchdog retrigger threshold.
+	 * If the current sensor value is equal or bigger than
+	 * this, the watchdog timeout is retriggered.
+	 */
+	uint8_t watering_watchdog_threshold;
 };
 
 /* Controller context data structure. */
@@ -106,37 +136,40 @@ struct controller {
 	bool eeprom_update_required;
 	/* The EEPROM-update timer. */
 	jiffies_t eeprom_update_time;
+
+	/* Controller activity is frozen? */
+	bool frozen;
+	/* Timeout for the controller freeze. */
+	jiffies_t freeze_timeout;
 };
 
 /* Instance of the controller context. */
 static struct controller cont;
 
 
-/* Initialization helper macro for pot config. */
-#define POT_DEFAULT_CONFIG						\
-	{								\
-		.flags			= 0,				\
-		.min_threshold		= 85,				\
-		.max_threshold		= 170,				\
-		.active_range = {					\
-			.from		= 0,				\
-			.to		= (time_of_day_t)(long)-1,	\
-		},							\
-		.dow_on_mask		= 0x7F,				\
-	}
-
-/* The EEPROM memory, for storage of configuration values. */
+/* The EEPROM memory for storage of configuration values. */
 static struct controller_config EEMEM eeprom_cont_config = {
-	.pots[0] = POT_DEFAULT_CONFIG,
-	.pots[1] = POT_DEFAULT_CONFIG,
-	.pots[2] = POT_DEFAULT_CONFIG,
-	.pots[3] = POT_DEFAULT_CONFIG,
-	.pots[4] = POT_DEFAULT_CONFIG,
-	.pots[5] = POT_DEFAULT_CONFIG,
+	.pots[0 ... (MAX_NR_FLOWERPOTS - 1)] = {
+		.flags			= 0,
+		.min_threshold		= 85,
+		.max_threshold		= 170,
+		.active_range = {
+			.from		= 0,
+			.to		= (time_of_day_t)(long)-1,
+		},
+		.dow_on_mask		= 0x7F,
+	},
 	.global = {
 		.flags			= CONTR_FLG_ENABLE,
 		.sensor_lowest_value	= 0,
 		.sensor_highest_value	= SENSOR_MAX,
+	},
+};
+
+/* The EEPROM memory for storage of the remanent per-pot states. */
+static struct flowerpot_remanent_state EEMEM eeprom_pot_rem_state[MAX_NR_FLOWERPOTS] = {
+	[0 ... (MAX_NR_FLOWERPOTS - 1)] = {
+		.flags		= 0,
 	},
 };
 
@@ -147,6 +180,16 @@ static struct controller_config EEMEM eeprom_cont_config = {
 static inline struct flowerpot_config * pot_config(const struct flowerpot *pot)
 {
 	return &cont.config.pots[pot->nr];
+}
+
+/* Write the remanent state of a pot to the EEPROM.
+ * pot: A pointer to the flowerpot.
+ */
+static void pot_remanent_state_commit_eeprom(struct flowerpot *pot)
+{
+	eeprom_update_block_wdtsafe(&pot->rem_state,
+				    &eeprom_pot_rem_state[pot->nr],
+				    sizeof(pot->rem_state));
 }
 
 /* Emit a log message, if logging is enabled.
@@ -332,24 +375,6 @@ static void pot_go_idle(struct flowerpot *pot)
 	pot_state_enter(pot, POT_IDLE);
 }
 
-/* Start watering.
- * This will set the "watering" state and open the valve.
- * pot: A pointer to the flowerpot.
- */
-static void pot_start_watering(struct flowerpot *pot)
-{
-	/* Emit a "watering started" log message.
-	 * The lower 4 bits of the log data is the pot number
-	 * and the 7th bit is the "watering active" bit.
-	 */
-	pot_info(pot, LOG_INFO, LOG_INFO_WATERINGCHG,
-		 (pot->nr & 0x0F) | 0x80);
-
-	/* Go into watering state and open the valve. */
-	pot->state.is_watering = 1;
-	valve_open(pot);
-}
-
 /* Stop watering.
  * This will reset the "watering" state and close the valve.
  * Additionally it will reset the controller state machine to "idle".
@@ -372,6 +397,85 @@ static void pot_stop_watering(struct flowerpot *pot)
 	}
 	valve_close(pot);
 	pot_go_idle(pot);
+}
+
+/* Retrigger the watering watchdog.
+ * pot: A pointer to the flowerpot.
+ */
+static void pot_watchdog_retrigger(struct flowerpot *pot)
+{
+	const struct flowerpot_config *config = pot_config(pot);
+	jiffies_t now = jiffies_get();
+	uint8_t range, threshold;
+
+	/* Get the configured regulator range. */
+	range = max(0, (int16_t)config->max_threshold - (int16_t)config->min_threshold);
+
+	/* Calculate the watchdog retrigger threshold. */
+	threshold = (uint16_t)range * WATCHDOG_THRESHOLD_PERCENT / 100;
+	threshold = max(1, threshold);
+
+	/* Assign the new watchdog parameters. */
+	pot->watering_watchdog_threshold = pot->state.last_measured_value + threshold;
+	pot->watering_watchdog_timeout = now + sec_to_jiffies(WATCHDOG_TIMEOUT_SEC);
+}
+
+/* Check whether the watering watchdog timed out.
+ * If that's the case, take appropriate measures.
+ * pot: A pointer to the flowerpot.
+ */
+static bool pot_check_watchdog(struct flowerpot *pot)
+{
+	jiffies_t now = jiffies_get();
+
+	if (pot->state.last_measured_value >= pot->watering_watchdog_threshold) {
+		/* The sensor value raised above the threshold.
+		 * Retrigger the watchdog.
+		 */
+		pot_watchdog_retrigger(pot);
+		return 0;
+	}
+
+	if (time_before(now, pot->watering_watchdog_timeout)) {
+		/* The watchdog did not time out, yet. */
+		return 0;
+	}
+
+	/* The watchdog timed out. This is an emergency situation.
+	 * Log the event.
+	 */
+	notify_led_set(1);
+	pot_info(pot, LOG_ERROR, LOG_ERR_WATERDOG, pot->nr & 0x0F);
+
+	/* Now stop watering and shutdown the pot. */
+	pot_stop_watering(pot);
+	pot->rem_state.flags |= POT_REMFLG_WDTRIGGER;
+	pot_remanent_state_commit_eeprom(pot);
+
+	return 1;
+}
+
+/* Start watering.
+ * This will set the "watering" state and open the valve.
+ * pot: A pointer to the flowerpot.
+ */
+static void pot_start_watering(struct flowerpot *pot)
+{
+	/* Emit a "watering started" log message.
+	 * The lower 4 bits of the log data is the pot number
+	 * and the 7th bit is the "watering active" bit.
+	 */
+	pot_info(pot, LOG_INFO, LOG_INFO_WATERINGCHG,
+		 (pot->nr & 0x0F) | 0x80);
+
+	/* Start the watchdog that will stop watering,
+	 * if it takes too long.
+	 */
+	pot_watchdog_retrigger(pot);
+
+	/* Go into watering state and open the valve. */
+	pot->state.is_watering = 1;
+	valve_open(pot);
 }
 
 /* Reset the state machine on one pot.
@@ -419,6 +523,10 @@ static void handle_pot(struct flowerpot *pot)
 
 		if (!(config->flags & POT_FLG_ENABLED)) {
 			/* This pot is disabled. Don't do anything. */
+			break;
+		}
+		if (pot->rem_state.flags & POT_REMFLG_WDTRIGGER) {
+			/* The watchdog triggered. Don't do anything. */
 			break;
 		}
 
@@ -515,10 +623,16 @@ static void handle_pot(struct flowerpot *pot)
 			 * If so, stop watering.
 			 * If not, go on watering.
 			 */
-			if (sensor_val >= config->max_threshold)
+			if (sensor_val >= config->max_threshold) {
 				pot_stop_watering(pot);
-			else
+			} else {
+				/* Not, yet. Check the watchdog. */
+				if (pot_check_watchdog(pot)) {
+					/* Whoops, it triggered. Abort. */
+					break;
+				}
 				valve_open(pot);
+			}
 		} else {
 			/* We are not watering, yet. Check if we dropped below
 			 * the lower threshold.
@@ -622,12 +736,43 @@ void controller_update_config(const struct controller_config *new_config)
 /* Get the state information for a given pot.
  * pot_number: The number of the pot to get the state for.
  * state: A pointer to the buffer the state will be copied into.
+ * rem_state: A pointer to the buffer the remanent state will be copied into.
  */
 void controller_get_pot_state(uint8_t pot_number,
-			      struct flowerpot_state *state)
+			      struct flowerpot_state *state,
+			      struct flowerpot_remanent_state *rem_state)
 {
-	if (pot_number < ARRAY_SIZE(cont.pots))
+	if (pot_number >= ARRAY_SIZE(cont.pots))
+		return;
+
+	if (state)
 		*state = cont.pots[pot_number].state;
+	if (rem_state)
+		*rem_state = cont.pots[pot_number].rem_state;
+}
+
+/* Update the remanent state on a given pot.
+ * pot_number: The number of the pot to get the state for.
+ * rem_state: A pointer to the new remanent state.
+ */
+void controller_update_pot_rem_state(uint8_t pot_number,
+				     const struct flowerpot_remanent_state *rem_state)
+{
+	struct flowerpot *pot;
+
+	if (pot_number >= ARRAY_SIZE(cont.pots))
+		return;
+	pot = &cont.pots[pot_number];
+
+	if (memcmp(rem_state, &pot->rem_state, sizeof(*rem_state)) == 0) {
+		/* Nothing changed. */
+		return;
+	}
+
+	pot->rem_state = *rem_state;
+	pot_remanent_state_commit_eeprom(pot);
+
+	pot_reset(pot);
 }
 
 /* Set the "manual mode" control bits.
@@ -654,11 +799,22 @@ void controller_manual_mode(uint8_t force_stop_watering_mask,
 	}
 }
 
+/* Freeze the controller activity.
+ * freeze: If true, freeze. Otherwise unfreeze.
+ */
+void controller_freeze(bool freeze)
+{
+	cont.frozen = freeze;
+	cont.freeze_timeout = jiffies_get() + sec_to_jiffies(5);
+}
+
 /* The main controller routine. */
 void controller_work(void)
 {
+	jiffies_t now = jiffies_get();
+
 	if (cont.eeprom_update_required &&
-	    time_after(jiffies_get(), cont.eeprom_update_time)) {
+	    !time_before(now, cont.eeprom_update_time)) {
 		cont.eeprom_update_required = 0;
 		/* An EEPROM write was scheduled.
 		 * Update the EEPROM contents.
@@ -666,6 +822,22 @@ void controller_work(void)
 		 */
 		eeprom_update_block_wdtsafe(&cont.config, &eeprom_cont_config,
 					    sizeof(cont.config));
+	}
+
+	if (cont.frozen) {
+		if (time_before(now, cont.freeze_timeout)) {
+			/* No freeze timeout. */
+			return;
+		} else {
+			struct log_item log;
+
+			/* Timeout. Disable freeze. */
+			cont.frozen = 0;
+
+			log_init(&log, LOG_ERROR);
+			log.code = LOG_ERR_FREEZE;
+			log_append(&log);
+		}
 	}
 
 	if (cont.config.global.flags & CONTR_FLG_ENABLE) {
@@ -701,5 +873,10 @@ void controller_init(void)
 
 		pot->nr = i;
 		pot_reset(pot);
+
+		/* Read the remanent pot state. */
+		eeprom_read_block_wdtsafe(&pot->rem_state,
+					  &eeprom_pot_rem_state[i],
+					  sizeof(pot->rem_state));
 	}
 }

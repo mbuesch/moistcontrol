@@ -26,8 +26,10 @@ class Message(SerialMessage):
 	MSG_CONTR_POT_CONF_FETCH	= 7
 	MSG_CONTR_POT_STATE		= 8
 	MSG_CONTR_POT_STATE_FETCH	= 9
-	MSG_MAN_MODE			= 10
-	MSG_MAN_MODE_FETCH		= 11
+	MSG_CONTR_POT_REM_STATE		= 10
+	MSG_CONTR_POT_REM_STATE_FETCH	= 11
+	MSG_MAN_MODE			= 12
+	MSG_MAN_MODE_FETCH		= 13
 
 	@classmethod
 	def fromRawMessage(cls, rawMsg):
@@ -86,6 +88,20 @@ class Message(SerialMessage):
 					last_measured_value = rawMsg.payload[6])
 			elif msgId == cls.MSG_CONTR_POT_STATE_FETCH:
 				msg = MsgContrPotStateFetch(pot_number = rawMsg.payload[1])
+			elif msgId == cls.MSG_CONTR_POT_REM_STATE:
+				msg = MsgContrPotRemState(
+					pot_number = rawMsg.payload[1],
+					flags = rawMsg.payload[2])
+			elif msgId == cls.MSG_CONTR_POT_REM_STATE_FETCH:
+				msg = MsgContrPotRemStateFetch(
+					pot_number = rawMsg.payload[1])
+			elif msgId == cls.MSG_MAN_MODE:
+				msg = MsgManMode(force_stop_watering_mask = rawMsg.payload[1],
+						 valve_manual_mask = rawMsg.payload[2],
+						 valve_manual_state = rawMsg.payload[3],
+						 flags = rawMsg.payload[4])
+			elif msgId == cls.MSG_MAN_MODE_FETCH:
+				msg = MsgManModeFetch()
 			else:
 				raise Error("Unknown message ID: %d" % msgId)
 			msg.copyHeaderFrom(rawMsg)
@@ -398,14 +414,51 @@ class MsgContrPotStateFetch(Message):
 		return bytes([ self.getType(),
 			       self.pot_number & 0xFF, ])
 
+class MsgContrPotRemState(Message):
+	POT_REMFLG_WDTRIGGER	= 0x01
+
+	def __init__(self,
+		     pot_number,
+		     flags = 0):
+		self.pot_number = pot_number
+		self.flags = flags
+		Message.__init__(self)
+
+	def getType(self):
+		return self.MSG_CONTR_POT_REM_STATE
+
+	def getPayload(self):
+		return bytes([ self.getType(),
+			       self.pot_number & 0xFF,
+			       self.flags & 0xFF, ])
+
+class MsgContrPotRemStateFetch(Message):
+	def __init__(self, pot_number):
+		self.pot_number = pot_number
+		Message.__init__(self, fc = Message.COMM_FC_REQ_ACK)
+
+	def getType(self):
+		return self.MSG_CONTR_POT_REM_STATE_FETCH
+
+	def getPayload(self):
+		return bytes([ self.getType(),
+			       self.pot_number & 0xFF, ])
+
 class MsgManMode(Message):
+	MANFLG_FREEZE_CHANGE    = 1 << 0
+	MANFLG_FREEZE_ENABLE    = 1 << 1
+	MANFLG_NOTIFY_CHANGE    = 1 << 2
+	MANFLG_NOTIFY_ENABLE    = 1 << 3
+
 	def __init__(self,
 		     force_stop_watering_mask = 0,
 		     valve_manual_mask = 0,
-		     valve_manual_state = 0):
+		     valve_manual_state = 0,
+		     flags = 0):
 		self.force_stop_watering_mask = force_stop_watering_mask
 		self.valve_manual_mask = valve_manual_mask
 		self.valve_manual_state = valve_manual_state
+		self.flags = flags
 		Message.__init__(self)
 
 	def getType(self):
@@ -415,7 +468,8 @@ class MsgManMode(Message):
 		return bytes([ self.getType(),
 			       self.force_stop_watering_mask & 0xFF,
 			       self.valve_manual_mask & 0xFF,
-			       self.valve_manual_state & 0xFF, ])
+			       self.valve_manual_state & 0xFF,
+			       self.flags & 0xFF, ])
 
 class MsgManModeFetch(Message):
 	def __init__(self):

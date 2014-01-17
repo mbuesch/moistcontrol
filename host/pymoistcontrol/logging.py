@@ -117,6 +117,8 @@ class LogItem(object):
 
 class LogItemError(LogItem):
 	LOG_ERR_SENSOR			= 0
+	LOG_ERR_WATERDOG		= 1
+	LOG_ERR_FREEZE			= 2
 
 	def __init__(self, flags, timestamp, errorCode, errorData):
 		"""Class constructor."""
@@ -140,6 +142,13 @@ class LogItemError(LogItem):
 			return "Error: Measurement at pot %d returned "\
 				"an implausible result." %\
 				(potNumber + 1)
+		elif self.errorCode == self.LOG_ERR_WATERDOG:
+			potNumber = self.errorData & 0xF
+			return "Error: Watering watchdog on pot %d "\
+				"timed out." %\
+				(potNumber + 1)
+		elif self.errorCode == self.LOG_ERR_FREEZE:
+			return "Error: A freeze timeout occurred."
 		else:
 			return "Error %d (%d) occurred" %\
 				(self.errorCode, self.errorData)

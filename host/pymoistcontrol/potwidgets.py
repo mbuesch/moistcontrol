@@ -63,6 +63,8 @@ class PotWidget(QWidget):
 	configChanged = Signal(int)
 	# Signal: Emitted, if a 'manual-mode' setting changed.
 	manModeChanged = Signal()
+	# Signal: Emitted, if a watchdog restart was requested.
+	watchdogRestartReq = Signal(int)
 
 	def __init__(self, potNumber, parent):
 		"""Class constructor."""
@@ -76,6 +78,21 @@ class PotWidget(QWidget):
 						(self.potNumber + 1),
 						self)
 		self.layout().addWidget(self.enableCheckBox, y, 0, 1, 2)
+		y += 1
+
+		self.watchdogGroup = QGroupBox("WARNING", self)
+		self.watchdogGroup.setLayout(QGridLayout())
+		label = QLabel("The watering watchdog was triggered.\n"
+			       "Watering is DISABLED on this pot.",
+			       self)
+		palette = label.palette()
+		palette.setColor(QPalette.WindowText, QColor(255, 0, 0))
+		label.setPalette(palette)
+		self.watchdogGroup.layout().addWidget(label, 0, 0)
+		self.watchdogResetButton = QPushButton("Reset watchdog and restart controller",
+						       self)
+		self.watchdogGroup.layout().addWidget(self.watchdogResetButton, 1, 0)
+		self.layout().addWidget(self.watchdogGroup, y, 0, 1, 2)
 		y += 1
 
 		label = QLabel("On weekday:")
@@ -181,6 +198,7 @@ class PotWidget(QWidget):
 
 		self.ignoreChanges = 0
 		self.enableCheckBox.stateChanged.connect(self.__enableChanged)
+		self.watchdogResetButton.released.connect(self.__watchdogResetPressed)
 		self.dowEnable.changed.connect(self.__dowEnableChanged)
 		self.logCheckBox.stateChanged.connect(self.__logChanged)
 		self.verboseLogCheckBox.stateChanged.connect(self.__logVerboseChanged)
@@ -265,6 +283,9 @@ class PotWidget(QWidget):
 				self.enableCheckBox.setCheckState(Qt.Checked)
 				return
 		self.configChanged.emit(self.potNumber)
+
+	def __watchdogResetPressed(self):
+		self.watchdogRestartReq.emit(self.potNumber)
 
 	def __dowEnableChanged(self):
 		if not self.ignoreChanges:
@@ -364,10 +385,21 @@ class PotWidget(QWidget):
 		self.stateMachineText.setText(controllerStateName(msg.state_id))
 		self.ignoreChanges -= 1
 
+	def handlePotRemStateMessage(self, msg):
+		if not self.isEnabled():
+			return
+		self.ignoreChanges += 1
+		if msg.flags & msg.POT_REMFLG_WDTRIGGER:
+			self.watchdogGroup.show()
+		else:
+			self.watchdogGroup.hide()
+		self.ignoreChanges -= 1
+
 	def resetState(self):
 		self.ignoreChanges += 1
 		self.statWidget.enableMessageHandling(self.isEnabled())
 		self.wateringIndi.setState(False)
 		self.rawAdc.setText("None")
 		self.stateMachineText.setText("Disabled")
+		self.watchdogGroup.hide()
 		self.ignoreChanges -= 1

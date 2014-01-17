@@ -46,6 +46,7 @@ class MainWidget(QWidget):
 		"log",
 		"rtc",
 		"pot_state",
+		"pot_rem_state",
 	]
 
 	def __init__(self, parent):
@@ -79,6 +80,7 @@ class MainWidget(QWidget):
 		for pot in self.potWidgets:
 			pot.configChanged.connect(self.__handlePotConfigChange)
 			pot.manModeChanged.connect(self.__handleManModeChange)
+			pot.watchdogRestartReq.connect(self.__handleWatchdogRestartReq)
 		self.pollTimer.timeout.connect(self.__pollTimerEvent)
 
 	def __handleCommError(self, exception):
@@ -126,18 +128,6 @@ class MainWidget(QWidget):
 			msg.flags |= msg.POT_FLG_LOGVERBOSE
 		return msg
 
-	def __makeMsg_ManMode(self):
-		msg = MsgManMode(force_stop_watering_mask = 0,
-				 valve_manual_mask = 0,
-				 valve_manual_state = 0)
-		for i, pot in enumerate(self.potWidgets):
-			if pot.forceStopWateringActive():
-				msg.force_stop_watering_mask |= 1 << i
-			if pot.forceOpenValveActive():
-				msg.valve_manual_mask |= 1 << i
-				msg.valve_manual_state |= 1 << i
-		return msg
-
 	def __handleGlobConfigChange(self):
 		try:
 			self.serial.send(self.__makeMsg_GlobalConfig())
@@ -161,7 +151,49 @@ class MainWidget(QWidget):
 
 	def __handleManModeChange(self):
 		try:
-			self.serial.send(self.__makeMsg_ManMode())
+			msg = MsgManMode()
+			for i, pot in enumerate(self.potWidgets):
+				if pot.forceStopWateringActive():
+					msg.force_stop_watering_mask |= 1 << i
+				if pot.forceOpenValveActive():
+					msg.valve_manual_mask |= 1 << i
+					msg.valve_manual_state |= 1 << i
+			self.serial.send(msg)
+		except SerialError as e:
+			self.__handleCommError(e)
+			return
+
+	def __sendFreeze(self, freeze=True):
+		msg = MsgManMode()
+		msg.flags |= MsgManMode.MANFLG_FREEZE_CHANGE
+		if freeze:
+			msg.flags |= MsgManMode.MANFLG_FREEZE_ENABLE
+		self.serial.send(msg)
+
+	def __sendClearNotify(self):
+		msg = MsgManMode()
+		msg.flags |= MsgManMode.MANFLG_NOTIFY_CHANGE
+		self.serial.send(msg)
+
+	def __handleWatchdogRestartReq(self, potNumber):
+		try:
+			self.__stopPolling()
+			self.__sendFreeze(True)
+
+			# Remove WD-trigger flag from remanent state
+			msg = self.__convertRxMsg(self.serial.sendSync(MsgContrPotRemStateFetch(potNumber)),
+						  fatalOnNoMsg = True)
+			if not self.__checkRxMsg(msg, Message.MSG_CONTR_POT_REM_STATE):
+				return
+			msg.fc = 0
+			msg.flags &= ~msg.POT_REMFLG_WDTRIGGER
+			self.serial.send(msg)
+
+			# Disable the notification LED
+			self.__sendClearNotify()
+
+			self.__sendFreeze(False)
+			self.__startPolling()
 		except SerialError as e:
 			self.__handleCommError(e)
 			return
@@ -180,6 +212,8 @@ class MainWidget(QWidget):
 				msg = MsgRtcFetch()
 			elif action == "pot_state":
 				msg = MsgContrPotStateFetch(self.potCycleNumber)
+			elif action == "pot_rem_state":
+				msg = MsgContrPotRemStateFetch(self.potCycleNumber)
 			else:
 				assert(0)
 			self.serial.send(msg)
@@ -187,6 +221,20 @@ class MainWidget(QWidget):
 			self.__handleCommError(e)
 			return
 		self.pollTimer.start(math.ceil(msg.calcFrameDuration() * 1000) + 10)
+
+	def __startPolling(self):
+		self.fetchCycleNumber = 0
+		self.potCycleNumber = 0
+		self.logCount = 0
+		self.__pollRetries = 0
+		self.__fetchCycleNext()
+
+	def __stopPolling(self):
+		self.pollTimer.stop()
+		# Drain pending RX-messages
+		time.sleep(0.1)
+		while self.serial.poll():
+			pass
 
 	def __checkRxMsg(self, msg, expectedType, ignoreErrorCode=False):
 		ok = True
@@ -261,14 +309,23 @@ class MainWidget(QWidget):
 		elif action == "rtc":
 			if self.__checkRxMsg(msg, Message.MSG_RTC):
 				self.globConfWidget.handleRtcMessage(msg)
-		elif action == "pot_state":
-			if self.__checkRxMsg(msg, Message.MSG_CONTR_POT_STATE):
+		elif action in ("pot_state", "pot_rem_state"):
+			expected = { "pot_state" : Message.MSG_CONTR_POT_STATE,
+				     "pot_rem_state" : Message.MSG_CONTR_POT_REM_STATE,
+				   }[action]
+			if self.__checkRxMsg(msg, expected):
 				if msg.pot_number == self.potCycleNumber:
-					self.globConfWidget.handlePotStateMessage(msg)
-					self.potWidgets[self.potCycleNumber].handlePotStateMessage(msg)
+					if action == "pot_state":
+						self.globConfWidget.handlePotStateMessage(msg)
+						self.potWidgets[self.potCycleNumber].handlePotStateMessage(msg)
+					elif action == "pot_rem_state":
+						self.globConfWidget.handlePotRemStateMessage(msg)
+						self.potWidgets[self.potCycleNumber].handlePotRemStateMessage(msg)
+					else:
+						assert(0)
 				else:
 					QMessageBox.critical(self,
-						"Pot state message mismatch",
+						"%s message mismatch" % action,
 						"Received pot state message for the"
 						"wrong pot (was %d, expected %d)." % \
 						(msg.pot_number, self.potCycleNumber))
@@ -289,10 +346,6 @@ class MainWidget(QWidget):
 			self.__fetchCycleNext()
 
 	def __initializeDev(self):
-		self.fetchCycleNumber = 0
-		self.potCycleNumber = 0
-		self.logCount = 0
-		self.__pollRetries = 0
 		try:
 			# Get the global configuration from the device
 			msg = self.__convertRxMsg(self.serial.sendSync(MsgContrConfFetch()),
@@ -314,7 +367,7 @@ class MainWidget(QWidget):
 					 valve_manual_state = 0)
 			self.serial.send(msg)
 			# Start cyclic data fetching
-			self.__fetchCycleNext()
+			self.__startPolling()
 		except SerialError as e:
 			self.__handleCommError(e)
 			return False
@@ -373,11 +426,7 @@ class MainWidget(QWidget):
 		return "\n".join(settings)
 
 	def setSettingsText(self, settings):
-		# Drain pending RX-messages
-		self.pollTimer.stop()
-		time.sleep(0.1)
-		while self.serial.poll():
-			pass
+		self.__stopPolling()
 		# Parse and upload the new config
 		try:
 			p = configparser.ConfigParser()

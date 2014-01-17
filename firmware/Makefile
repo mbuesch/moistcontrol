@@ -7,6 +7,7 @@ SRCS			:= comm.c \
 			   datetime.c \
 			   log.c \
 			   main.c \
+			   notify_led.c \
 			   ioext.c \
 			   pcf8574.c \
 			   rv3029.c \

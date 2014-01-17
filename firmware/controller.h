@@ -103,15 +103,33 @@ struct flowerpot_state {
 	uint8_t last_measured_value;
 };
 
+enum flowerpot_remanent_flags {
+	/* The watering watchdog on this pot triggered.
+	 * The regulator will be disabled.
+	 */
+	POT_REMFLG_WDTRIGGER	= 0x01,
+};
+
+/* The flowerpot state-machine remanent state. */
+struct flowerpot_remanent_state {
+	/* Remanent state flags bitfield. */
+	uint8_t flags;
+};
+
 void controller_get_config(struct controller_config *dest);
 void controller_update_config(const struct controller_config *src);
 
 void controller_get_pot_state(uint8_t pot_number,
-			      struct flowerpot_state *state);
+			      struct flowerpot_state *state,
+			      struct flowerpot_remanent_state *rem_state);
+void controller_update_pot_rem_state(uint8_t pot_number,
+				     const struct flowerpot_remanent_state *rem_state);
 
 void controller_manual_mode(uint8_t force_stop_watering_mask,
 			    uint8_t valve_manual_mask,
 			    uint8_t valve_manual_state);
+
+void controller_freeze(bool freeze);
 
 void controller_work(void);
 void controller_init(void);

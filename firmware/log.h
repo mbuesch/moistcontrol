@@ -21,6 +21,8 @@ enum log_type_flags {
 
 enum log_error {
 	LOG_ERR_SENSOR,			/* Sensor short circuit. */
+	LOG_ERR_WATERDOG,		/* Watering-watchdog fired. */
+	LOG_ERR_FREEZE,			/* Freeze timeout. */
 };
 
 enum log_info {

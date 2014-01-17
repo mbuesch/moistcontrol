@@ -27,6 +27,7 @@
 #include "twi_master.h"
 #include "pcf8574.h"
 #include "rv3029.h"
+#include "notify_led.h"
 
 #include <avr/io.h>
 #include <avr/wdt.h>
@@ -49,8 +50,17 @@ enum user_message_id {
 	MSG_CONTR_POT_CONF_FETCH,	/* Pot configuration request */
 	MSG_CONTR_POT_STATE,		/* Pot state */
 	MSG_CONTR_POT_STATE_FETCH,	/* Pot state request */
+	MSG_CONTR_POT_REM_STATE,	/* Pot remanent state */
+	MSG_CONTR_POT_REM_STATE_FETCH,	/* Pot remanent state request */
 	MSG_MAN_MODE,			/* Manual mode settings */
 	MSG_MAN_MODE_FETCH,		/* Manual mode settings request */
+};
+
+enum man_mode_flags {
+	MANFLG_FREEZE_CHANGE	= 1 << 0, /* Freeze change request */
+	MANFLG_FREEZE_ENABLE	= 1 << 1, /* Freeze on/off */
+	MANFLG_NOTIFY_CHANGE	= 1 << 2, /* LED-status change request */
+	MANFLG_NOTIFY_ENABLE	= 1 << 3, /* LED-status on/off */
 };
 
 /* Payload of host communication messages. */
@@ -86,11 +96,18 @@ struct msg_payload {
 			struct flowerpot_state state;
 		} _packed contr_pot_state;
 
+		/* Controller flower pot remanent state. */
+		struct {
+			uint8_t pot_number;
+			struct flowerpot_remanent_state rem_state;
+		} _packed contr_pot_rem_state;
+
 		/* Manual mode settings. */
 		struct {
 			uint8_t force_stop_watering_mask;
 			uint8_t valve_manual_mask;
 			uint8_t valve_manual_state;
+			uint8_t flags;
 		} _packed manual_mode;
 	} _packed;
 } _packed;
@@ -175,7 +192,9 @@ bool comm_handle_rx_message(const struct comm_message *msg,
 		reply->contr_conf.conf = conf.global;
 		break;
 	}
-	case MSG_CONTR_POT_CONF: { /* Set flower pot config. */
+	case MSG_CONTR_POT_CONF: {
+		/* Set flower pot config. */
+
 		uint8_t pot_number = pl->contr_pot_conf.pot_number;
 		struct controller_config conf;
 
@@ -226,7 +245,41 @@ bool comm_handle_rx_message(const struct comm_message *msg,
 		reply->id = MSG_CONTR_POT_STATE;
 		reply->contr_pot_state.pot_number = pot_number;
 		controller_get_pot_state(pot_number,
-					 &reply->contr_pot_state.state);
+					 &reply->contr_pot_state.state,
+					 NULL);
+		break;
+	}
+	case MSG_CONTR_POT_REM_STATE: {
+		/* Set the flower pot remanent state. */
+
+		uint8_t pot_number = pl->contr_pot_rem_state.pot_number;
+
+		if (pot_number >= MAX_NR_FLOWERPOTS) {
+			/* Invalid pot number. */
+			return 0;
+		}
+
+		/* Write the new rememanent state. */
+		controller_update_pot_rem_state(pot_number,
+						&pl->contr_pot_rem_state.rem_state);
+		break;
+	}
+	case MSG_CONTR_POT_REM_STATE_FETCH: {
+		/* Fetch flower pot remanent state. */
+
+		uint8_t pot_number = pl->contr_pot_rem_state.pot_number;
+
+		if (pot_number >= MAX_NR_FLOWERPOTS) {
+			/* Invalid pot number. */
+			return 0;
+		}
+
+		/* Fill the reply message. */
+		reply->id = MSG_CONTR_POT_REM_STATE;
+		reply->contr_pot_rem_state.pot_number = pot_number;
+		controller_get_pot_state(pot_number,
+					 NULL,
+					 &reply->contr_pot_rem_state.rem_state);
 		break;
 	}
 	case MSG_MAN_MODE: {
@@ -235,6 +288,13 @@ bool comm_handle_rx_message(const struct comm_message *msg,
 		controller_manual_mode(pl->manual_mode.force_stop_watering_mask,
 				       pl->manual_mode.valve_manual_mask,
 				       pl->manual_mode.valve_manual_state);
+
+		if (pl->manual_mode.flags & MANFLG_FREEZE_CHANGE)
+			controller_freeze(!!(pl->manual_mode.flags & MANFLG_FREEZE_ENABLE));
+
+		if (pl->manual_mode.flags & MANFLG_NOTIFY_CHANGE)
+			notify_led_set(!!(pl->manual_mode.flags & MANFLG_NOTIFY_ENABLE));
+
 		break;
 	}
 	default:
@@ -308,6 +368,7 @@ int main(void)
 	wdt_enable(WDTO_120MS);
 
 	/* Initialize the system. */
+	notify_led_init();
 	twi_init();
 	systimer_init();
 	rv3029_init();
@@ -339,5 +400,8 @@ int main(void)
 
 		/* Run the controller state machine. */
 		controller_work();
+
+		/* Handle notification LED state. */
+		notify_led_work();
 	}
 }

@@ -45,6 +45,15 @@ class GlobalConfigWidget(QWidget):
 		self.layout().addWidget(self.enableCheckBox, y, 0, 1, 2)
 		y += 1
 
+		self.watchdogWarning = QLabel()
+		palette = self.watchdogWarning.palette()
+		palette.setColor(QPalette.WindowText, QColor(255, 0, 0))
+		self.watchdogWarning.setPalette(palette)
+		self.watchdogWarning.hide()
+		self.watchdogWarningPotNumbers = []
+		self.layout().addWidget(self.watchdogWarning, y, 0, 1, 2)
+		y += 1
+
 		label = QLabel("RTC time:", self)
 		self.layout().addWidget(label, y, 0)
 		hbox = QHBoxLayout()
@@ -155,6 +164,29 @@ class GlobalConfigWidget(QWidget):
 	def handlePotStateMessage(self, msg):
 		self.ignoreChanges += 1
 		self.statWidgets[msg.pot_number].handlePotStateMessage(msg)
+		self.ignoreChanges -= 1
+
+	def __updateWatchdogWarning(self):
+		if self.watchdogWarningPotNumbers:
+			self.watchdogWarning.setText(
+				"WARNING: The watering watchdog was triggered.\n"\
+				"Watering is disabled on: %s" %\
+				", ".join("pot %d" % (n + 1) for n in self.watchdogWarningPotNumbers))
+			self.watchdogWarning.show()
+		else:
+			self.watchdogWarning.setText("")
+			self.watchdogWarning.hide()
+
+	def handlePotRemStateMessage(self, msg):
+		self.ignoreChanges += 1
+		if msg.flags & msg.POT_REMFLG_WDTRIGGER:
+			if msg.pot_number not in self.watchdogWarningPotNumbers:
+				self.watchdogWarningPotNumbers.append(msg.pot_number)
+				self.__updateWatchdogWarning()
+		else:
+			if msg.pot_number in self.watchdogWarningPotNumbers:
+				self.watchdogWarningPotNumbers.remove(msg.pot_number)
+				self.__updateWatchdogWarning()
 		self.ignoreChanges -= 1
 
 	def handlePotConfMessage(self, msg):
