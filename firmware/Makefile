@@ -160,7 +160,8 @@ $(HEX): $(BIN)
 	 $(OBJCOPY) -j.eeprom --set-section-flags=.eeprom="alloc,load" \
 	 --change-section-lma .eeprom=0 -O ihex $(BIN) $(EEP) \
 	 || $(TRUE))
-	$(QUIET_SIZE) $(BIN)
+	@$(ECHO)
+	$(QUIET_SIZE) --format=SysV $(BIN)
 
 avrdude:
 	$(call PROGRAMMER_CMD_PROG_ENTER)
