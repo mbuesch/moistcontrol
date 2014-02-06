@@ -82,13 +82,16 @@ class MainWidget(QWidget):
 		self.pollTimer.timeout.connect(self.__pollTimerEvent)
 
 	def __handleCommError(self, exception):
+		"""Handle a serial communication error."""
 		QMessageBox.critical(self,
 				     "Serial communication failed",
 				     "Serial communication failed:\n"
 				     "%s" % str(exception))
+		# Communication is down. Disconnect device.
 		self.disconnectDev()
 
 	def __makeMsg_GlobalConfig(self):
+		"""Generate a "GlobalConfig" message and return it."""
 		msg = MsgContrConf(flags = 0,
 				   sensor_lowest_value = self.globConfWidget.lowestRawSensorVal(),
 				   sensor_highest_value = self.globConfWidget.highestRawSensorVal())
@@ -97,6 +100,7 @@ class MainWidget(QWidget):
 		return msg
 
 	def __makeMsg_RTC(self):
+		"""Generate an "RTC" message and return it."""
 		dateTime = self.globConfWidget.getRtcDateTime()
 		msg = MsgRtc(second = dateTime.time().second(),
 			     minute = dateTime.time().minute(),
@@ -108,6 +112,7 @@ class MainWidget(QWidget):
 		return msg
 
 	def __makeMsg_PotConfig(self, potNumber):
+		"""Generate a "PotConfig" message and return it."""
 		pot = self.potWidgets[potNumber]
 		self.globConfWidget.handlePotEnableChange(potNumber,
 							  pot.isEnabled())
@@ -127,6 +132,7 @@ class MainWidget(QWidget):
 		return msg
 
 	def __makeMsg_ManMode(self):
+		"""Generate a "ManMode" message and return it."""
 		msg = MsgManMode(force_stop_watering_mask = 0,
 				 valve_manual_mask = 0,
 				 valve_manual_state = 0)
@@ -139,6 +145,7 @@ class MainWidget(QWidget):
 		return msg
 
 	def __handleGlobConfigChange(self):
+		"""Handle a change to any global configuration parameter."""
 		try:
 			self.serial.send(self.__makeMsg_GlobalConfig())
 		except SerialError as e:
@@ -146,6 +153,7 @@ class MainWidget(QWidget):
 			return
 
 	def __handleRtcEdit(self):
+		"""Handle a change to the RTC time."""
 		try:
 			self.serial.send(self.__makeMsg_RTC())
 		except SerialError as e:
@@ -153,6 +161,7 @@ class MainWidget(QWidget):
 			return
 
 	def __handlePotConfigChange(self, potNumber):
+		"""Handle a change to any pot configuration parameter."""
 		try:
 			self.serial.send(self.__makeMsg_PotConfig(potNumber))
 		except SerialError as e:
@@ -160,6 +169,7 @@ class MainWidget(QWidget):
 			return
 
 	def __handleManModeChange(self):
+		"""Handle a change to any manual-mode configuration parameter."""
 		try:
 			self.serial.send(self.__makeMsg_ManMode())
 		except SerialError as e:
@@ -167,11 +177,13 @@ class MainWidget(QWidget):
 			return
 
 	def setUiEnabled(self, enabled = True):
+		"""Enable/disable the user interface."""
 		self.globConfWidget.setEnabled(enabled)
 		for i in range(self.tabWidget.count()):
 			self.tabWidget.widget(i).setEnabled(enabled)
 
 	def __fetchCycleNext(self):
+		"""Send the next "fetch"-message to the device."""
 		action = self.fetchCycle[self.fetchCycleNumber]
 		try:
 			if action == "log":
@@ -186,9 +198,15 @@ class MainWidget(QWidget):
 		except SerialError as e:
 			self.__handleCommError(e)
 			return
+		# Start the RX poll timer, based on the calculated frame time.
 		self.pollTimer.start(math.ceil(msg.calcFrameDuration() * 1000) + 10)
 
 	def __checkRxMsg(self, msg, expectedType, ignoreErrorCode=False):
+		"""Check a received message for validity.
+		msg: The received message.
+		expectedType: The expected type 'msg'.
+		ignoreErrorCode: If true, a message error code != OK will
+		                 not cause the check to fail."""
 		ok = True
 		if not ignoreErrorCode:
 			if msg.getErrorCode() != Message.COMM_ERR_OK:
@@ -207,10 +225,12 @@ class MainWidget(QWidget):
 				(msg.getType(), expectedType))
 			ok = False
 		if not ok:
+			# The received message is flaky. Break connection.
 			self.disconnectDev()
 		return ok
 
 	def __convertRxMsg(self, msg, fatalOnNoMsg=False):
+		"""Convert a received raw message to a high-level message object."""
 		msg = Message.fromRawMessage(msg)
 		if not msg:
 			if fatalOnNoMsg:
@@ -227,6 +247,8 @@ class MainWidget(QWidget):
 		return msg
 
 	def __pollTimerEvent(self):
+		"""Receive poll timer event.
+		Checks the serial line for received messages."""
 		try:
 			msg = self.__convertRxMsg(self.serial.poll())
 			if not msg:
@@ -244,6 +266,7 @@ class MainWidget(QWidget):
 		except SerialError as e:
 			self.__handleCommError(e)
 			return
+		# We got a message
 		error = msg.getErrorCode()
 
 		advanceFetchCycle = True
@@ -281,6 +304,7 @@ class MainWidget(QWidget):
 			assert(0)
 
 		if advanceFetchCycle:
+			# Increment the fetch cycle number to the next action.
 			self.fetchCycleNumber += 1
 			if self.fetchCycleNumber >= len(self.fetchCycle):
 				self.fetchCycleNumber = 0
@@ -289,6 +313,8 @@ class MainWidget(QWidget):
 			self.__fetchCycleNext()
 
 	def __initializeDev(self):
+		"""Initialize the device.
+		Fetch configuration and status from device."""
 		self.fetchCycleNumber = 0
 		self.potCycleNumber = 0
 		self.logCount = 0
@@ -324,6 +350,7 @@ class MainWidget(QWidget):
 		return self.connected
 
 	def connectDev(self, port=None):
+		"""Connect to the device, via serial line."""
 		if self.connected:
 			return
 		if not port:
@@ -347,6 +374,7 @@ class MainWidget(QWidget):
 		self.serialConnected.emit()
 
 	def disconnectDev(self):
+		"""Disconnect the current device connection."""
 		self.setUiEnabled(False)
 		self.pollTimer.stop()
 		if self.serial:
@@ -357,6 +385,7 @@ class MainWidget(QWidget):
 			self.serialDisconnected.emit()
 
 	def getSettingsText(self):
+		"""Get a text representation of the current configuration."""
 		settings = [
 			"[MOISTCONTROL_SETTINGS]\n" \
 			"file_version=0\n" \
@@ -373,6 +402,7 @@ class MainWidget(QWidget):
 		return "\n".join(settings)
 
 	def setSettingsText(self, settings):
+		"""Apply a text representation of the configuration to the device."""
 		# Drain pending RX-messages
 		self.pollTimer.stop()
 		time.sleep(0.1)
@@ -404,6 +434,7 @@ class MainWidget(QWidget):
 			self.__initializeDev()
 
 	def doLoadSettings(self, filename):
+		"""Load configuration settings from a named file."""
 		try:
 			fd = open(filename, "rb")
 			settings = fd.read().decode("UTF-8")
@@ -416,6 +447,7 @@ class MainWidget(QWidget):
 				"%s" % str(e))
 
 	def loadSettings(self):
+		"""Load configuration settings from a file."""
 		fn, filt = QFileDialog.getOpenFileName(self,
 				"Load settings from file",
 				"",
@@ -426,6 +458,7 @@ class MainWidget(QWidget):
 		self.doLoadSettings(fn)
 
 	def doSaveSettingsAs(self, filename):
+		"""Save configuration settings to a named file."""
 		try:
 			fd = open(filename, "wb")
 			fd.write(self.getSettingsText().encode("UTF-8"))
@@ -437,6 +470,7 @@ class MainWidget(QWidget):
 				"%s" % str(e))
 
 	def saveSettingsAs(self):
+		"""Save configuration settings to a file."""
 		fn, filt = QFileDialog.getSaveFileName(self,
 				"Save settings to file",
 				"",
@@ -485,6 +519,7 @@ class MainWindow(QMainWindow):
 		mainWidget.serialDisconnected.connect(self.updateConnButtons)
 
 	def updateConnButtons(self):
+		"""Update the enable-status of the connect buttons."""
 		connected = self.centralWidget().isConnected()
 		self.connMenuButton.setEnabled(not connected)
 		self.connToolButton.setEnabled(not connected)
