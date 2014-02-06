@@ -30,7 +30,7 @@ hook_testbuild()
 	done
 }
 
-hook_pre_tarball()
+hook_pre_archives()
 {
 	# Build the hex file before packing the tarball.
 	default_hook_testbuild "$2"/firmware/
@@ -47,5 +47,5 @@ hook_pre_tarball()
 }
 
 project=moistcontrol
-default_compress=zip
+default_archives=zip
 makerelease "$@"
