@@ -56,7 +56,7 @@
  * If the watchdog times out, an error is assumed and watering
  * of the affected pot is stopped.
  */
-#define WATCHDOG_TIMEOUT_SEC		300
+#define WATCHDOG_TIMEOUT_SEC		600
 /* The watering-watchdog retrigger threshold.
  * If the measured value raised by this threshold, the watchdog
  * will be retriggered.
