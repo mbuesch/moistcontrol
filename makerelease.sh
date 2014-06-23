@@ -27,11 +27,6 @@ hook_pre_archives()
 	cp "$2"/firmware/moistcontrol.hex "$2"/firmware-progmem.hex
 	cp "$2"/firmware/moistcontrol.eep.hex "$2"/firmware-eeprom.hex
 
-	# Move the documentation
-	mv "$2"/schematics/moistcontrol.pdf "$2"/schaltplan.pdf
-	mv "$2"/doc/dokumentation.pdf "$2"/
-	mv "$2"/doc/moistcontrol.pap "$2"/programmablaufplan.pap
-
 	cd "$2"/firmware
 	make clean
 }
