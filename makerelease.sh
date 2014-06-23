@@ -47,5 +47,4 @@ hook_pre_archives()
 }
 
 project=moistcontrol
-default_archives=zip
 makerelease "$@"
