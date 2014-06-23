@@ -20,16 +20,6 @@ hook_get_version()
 	version=v"$v"
 }
 
-hook_testbuild()
-{
-	for f in $(find . -name '*.c' -o -name '*.h'); do
-		# Check CR/LF
-		file "$f" | grep -qEe '(CRLF line terminators)|(assembler source text)' || {
-			die "ERROR: '$(basename "$f")' is not in DOS format."
-		}
-	done
-}
-
 hook_pre_archives()
 {
 	# Build the hex file before packing the tarball.
