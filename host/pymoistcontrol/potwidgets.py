@@ -107,7 +107,7 @@ class PotWidget(QWidget):
 		self.layout().addWidget(self.statWidget, y, 1)
 		y += 1
 
-		label = QLabel("Lower threshold:", self)
+		label = QLabel("Threshold:", self)
 		self.layout().addWidget(label, y, 0)
 		self.minThreshold = QSlider(Qt.Horizontal, self)
 		self.minThreshold.setRange(0, 0xFF)
@@ -115,12 +115,12 @@ class PotWidget(QWidget):
 		self.layout().addWidget(self.minThreshold, y, 1)
 		y += 1
 
-		label = QLabel("Upper threshold:", self)
+		label = QLabel("Hysteresis:", self)
 		self.layout().addWidget(label, y, 0)
-		self.maxThreshold = QSlider(Qt.Horizontal, self)
-		self.maxThreshold.setRange(0, 0xFF)
-		self.maxThreshold.setValue(0)
-		self.layout().addWidget(self.maxThreshold, y, 1)
+		self.hyst = QSlider(Qt.Horizontal, self)
+		self.hyst.setRange(0, 0xFF)
+		self.hyst.setValue(0)
+		self.layout().addWidget(self.hyst, y, 1)
 		y += 1
 
 		label = QLabel("Not before time:", self)
@@ -203,7 +203,7 @@ class PotWidget(QWidget):
 		self.logCheckBox.stateChanged.connect(self.__logChanged)
 		self.verboseLogCheckBox.stateChanged.connect(self.__logVerboseChanged)
 		self.minThreshold.valueChanged.connect(self.__minChanged)
-		self.maxThreshold.valueChanged.connect(self.__maxChanged)
+		self.hyst.valueChanged.connect(self.__hystChanged)
 		self.startTimeCheckBox.stateChanged.connect(self.__startTimeChanged)
 		self.startTime.timeChanged.connect(self.__startTimeChanged)
 		self.endTimeCheckBox.stateChanged.connect(self.__endTimeChanged)
@@ -260,7 +260,7 @@ class PotWidget(QWidget):
 		return self.minThreshold.value()
 
 	def getMaxThreshold(self):
-		return self.maxThreshold.value()
+		return min(0xFF, self.minThreshold.value() + self.hyst.value())
 
 	def __advancedChanged(self, newState):
 		if newState == Qt.Checked:
@@ -302,18 +302,10 @@ class PotWidget(QWidget):
 
 	def __minChanged(self, newValue):
 		if not self.ignoreChanges:
-			self.ignoreChanges += 1
-			if newValue > self.maxThreshold.value():
-				self.maxThreshold.setValue(newValue)
-			self.ignoreChanges -= 1
 			self.configChanged.emit(self.potNumber)
 
-	def __maxChanged(self, newValue):
+	def __hystChanged(self, newValue):
 		if not self.ignoreChanges:
-			self.ignoreChanges += 1
-			if newValue < self.minThreshold.value():
-				self.minThreshold.setValue(newValue)
-			self.ignoreChanges -= 1
 			self.configChanged.emit(self.potNumber)
 
 	def __startTimeChanged(self):
@@ -358,7 +350,7 @@ class PotWidget(QWidget):
 		else:
 			self.verboseLogCheckBox.setCheckState(Qt.Unchecked)
 		self.minThreshold.setValue(msg.min_threshold)
-		self.maxThreshold.setValue(msg.max_threshold)
+		self.hyst.setValue(msg.max_threshold - msg.min_threshold)
 		h, m, s = MsgContrPotConf.fromTimeOfDay(msg.start_time)
 		if MsgContrPotConf.toTimeOfDay(h, m, s) == MsgContrPotConf.toTimeOfDay(0, 0, 0):
 			self.startTimeCheckBox.setCheckState(Qt.Unchecked)
