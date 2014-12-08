@@ -377,17 +377,10 @@ static enum onoff_state handle_onoffswitch(void)
 
 	if (hw_switch == ONOFF_SWITCHED_OFF) {
 		/* Log the 'off'-event. */
-		log_init(&log, LOG_INFO);
-		log.code = LOG_INFO_HWONOFF;
-		log.data = 0;
-		log_append(&log);
-
+		log_info(LOG_INFO_HWONOFF, 0);
 	} else if (hw_switch == ONOFF_SWITCHED_ON) {
 		/* Log the 'on'-event. */
-		log_init(&log, LOG_INFO);
-		log.code = LOG_INFO_HWONOFF;
-		log.data = 1;
-		log_append(&log);
+		log_info(LOG_INFO_HWONOFF, 1);
 
 		/* Disable notification LED.
 		 * This will also clear notification messages from other

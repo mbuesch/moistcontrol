@@ -67,14 +67,13 @@ void log_init(struct log_item *item, uint8_t type);
 void log_append(const struct log_item *item);
 bool log_pop(struct log_item *item);
 
+void log_event(uint8_t type, uint8_t code, uint8_t data);
+
+void log_info(uint8_t code, uint8_t data);
+void log_error(uint8_t code, uint8_t data);
 static inline void log_debug(uint8_t data)
 {
-	struct log_item item;
-
-	log_init(&item, LOG_INFO);
-	item.code = LOG_INFO_DEBUG;
-	item.data = data;
-	log_append(&item);
+	log_info(LOG_INFO_DEBUG, data);
 }
 
 #endif /* LOG_H_ */

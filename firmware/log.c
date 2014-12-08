@@ -25,7 +25,7 @@
 
 
 /* Size of the log ringbuffer, in number of elements. */
-#define LOG_BUFFER_SIZE		32
+#define LOG_BUFFER_SIZE		24
 
 
 /* Log buffer */
@@ -131,4 +131,24 @@ bool log_pop(struct log_item *item)
 	irq_restore(sreg);
 
 	return 1;
+}
+
+void log_event(uint8_t type, uint8_t code, uint8_t data)
+{
+	struct log_item log;
+
+	log_init(&log, type);
+	log.code = code;
+	log.data = data;
+	log_append(&log);
+}
+
+void log_info(uint8_t code, uint8_t data)
+{
+	log_event(LOG_INFO, code, data);
+}
+
+void log_error(uint8_t code, uint8_t data)
+{
+	log_event(LOG_ERROR, code, data);
 }

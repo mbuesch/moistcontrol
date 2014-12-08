@@ -208,12 +208,7 @@ static void pot_info(struct flowerpot *pot,
 		return;
 	}
 
-	/* Construct the log data structure. */
-	log_init(&log, log_class);
-	log.code = log_code;
-	log.data = log_data;
-	/* Append the log message to the log queue. */
-	log_append(&log);
+	log_event(log_class, log_code, log_data);
 }
 
 /* Emit a log message, if verbose logging is enabled.
@@ -857,14 +852,9 @@ void controller_work(enum onoff_state hw_switch)
 			/* No freeze timeout. */
 			return;
 		} else {
-			struct log_item log;
-
 			/* Timeout. Disable freeze. */
 			cont.frozen = 0;
-
-			log_init(&log, LOG_ERROR);
-			log.code = LOG_ERR_FREEZE;
-			log_append(&log);
+			log_error(LOG_ERR_FREEZE, 0);
 		}
 	}
 
