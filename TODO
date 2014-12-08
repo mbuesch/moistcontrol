@@ -1,0 +1,5 @@
+- Add software button to force start measurement.
+- After connect check whether RTC is out of sync with PC clock.
+  Offer optional sync in that case.
+- Show notification-LED state on host software.
+- Show on/off-switch state on host software.
