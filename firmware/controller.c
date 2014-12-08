@@ -478,6 +478,18 @@ static bool pot_check_watchdog(struct flowerpot *pot)
 	return 1;
 }
 
+/* Clear the watchdog flag on a pot.
+ * pot: The pot to clear the watchdog on.
+ */
+static void pot_watchdog_clear(struct flowerpot *pot)
+{
+	if (pot->rem_state.flags & POT_REMFLG_WDTRIGGER) {
+		pot->rem_state.flags &= ~POT_REMFLG_WDTRIGGER;
+		pot_reset(pot);
+		pot_remanent_state_commit_eeprom(pot);
+	}
+}
+
 /* Clear the watchdog flags on all pots.
  * This will re-enable watering, if it was stopped due to watchdog.
  */
@@ -485,18 +497,11 @@ static void controller_watchdogs_clear(void)
 {
 	struct flowerpot *pot;
 	uint8_t i;
-	bool update = 0;
 
 	for (i = 0; i < ARRAY_SIZE(cont.pots); i++) {
 		pot = &cont.pots[i];
-		if (pot->rem_state.flags & POT_REMFLG_WDTRIGGER) {
-			pot->rem_state.flags &= ~POT_REMFLG_WDTRIGGER;
-			pot_reset(pot);
-			update = 1;
-		}
+		pot_watchdog_clear(pot);
 	}
-	if (update)
-		pot_remanent_state_commit_eeprom(pot);
 }
 
 /* Start watering.
