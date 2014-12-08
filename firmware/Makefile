@@ -9,6 +9,7 @@ SRCS			:= comm.c \
 			   main.c \
 			   notify_led.c \
 			   ioext.c \
+			   onoffswitch.c \
 			   pcf8574.c \
 			   rv3029.c \
 			   sensor.c \

@@ -399,6 +399,29 @@ static void pot_stop_watering(struct flowerpot *pot)
 	pot_go_idle(pot);
 }
 
+/* Reset the state machine on one pot.
+ * pot: A pointer to the flowerpot.
+ */
+static void pot_reset(struct flowerpot *pot)
+{
+	if (pot->state.state_id == POT_MEASURING) {
+		/* We are currently measuring on this
+		 * pot. Cancel the sensor measurement.
+		 */
+		sensor_cancel();
+	}
+
+	/* Reset all state values. */
+	pot->state.is_watering = 0;
+	pot->next_measurement = jiffies_get() + sec_to_jiffies(FIRST_CTRL_INTERVAL_SEC);
+	pot_state_enter(pot, POT_IDLE);
+	pot->valve_manual_en = 0;
+	pot->valve_manual_state = 0;
+
+	/* Make sure the valve is closed. */
+	valve_close(pot);
+}
+
 /* Retrigger the watering watchdog.
  * pot: A pointer to the flowerpot.
  */
@@ -455,6 +478,27 @@ static bool pot_check_watchdog(struct flowerpot *pot)
 	return 1;
 }
 
+/* Clear the watchdog flags on all pots.
+ * This will re-enable watering, if it was stopped due to watchdog.
+ */
+static void controller_watchdogs_clear(void)
+{
+	struct flowerpot *pot;
+	uint8_t i;
+	bool update = 0;
+
+	for (i = 0; i < ARRAY_SIZE(cont.pots); i++) {
+		pot = &cont.pots[i];
+		if (pot->rem_state.flags & POT_REMFLG_WDTRIGGER) {
+			pot->rem_state.flags &= ~POT_REMFLG_WDTRIGGER;
+			pot_reset(pot);
+			update = 1;
+		}
+	}
+	if (update)
+		pot_remanent_state_commit_eeprom(pot);
+}
+
 /* Start watering.
  * This will set the "watering" state and open the valve.
  * pot: A pointer to the flowerpot.
@@ -476,29 +520,6 @@ static void pot_start_watering(struct flowerpot *pot)
 	/* Go into watering state and open the valve. */
 	pot->state.is_watering = 1;
 	valve_open(pot);
-}
-
-/* Reset the state machine on one pot.
- * pot: A pointer to the flowerpot.
- */
-static void pot_reset(struct flowerpot *pot)
-{
-	if (pot->state.state_id == POT_MEASURING) {
-		/* We are currently measuring on this
-		 * pot. Cancel the sensor measurement.
-		 */
-		sensor_cancel();
-	}
-
-	/* Reset all state values. */
-	pot->state.is_watering = 0;
-	pot->next_measurement = jiffies_get() + sec_to_jiffies(FIRST_CTRL_INTERVAL_SEC);
-	pot_state_enter(pot, POT_IDLE);
-	pot->valve_manual_en = 0;
-	pot->valve_manual_state = 0;
-
-	/* Make sure the valve is closed. */
-	valve_close(pot);
 }
 
 /* The pot controller state machine routine.
@@ -808,8 +829,10 @@ void controller_freeze(bool freeze)
 	cont.freeze_timeout = jiffies_get() + sec_to_jiffies(5);
 }
 
-/* The main controller routine. */
-void controller_work(void)
+/* The main controller routine.
+ * hw_switch: The state of the hardware on/off-switch.
+ */
+void controller_work(enum onoff_state hw_switch)
 {
 	jiffies_t now = jiffies_get();
 
@@ -840,15 +863,34 @@ void controller_work(void)
 		}
 	}
 
-	if (cont.config.global.flags & CONTR_FLG_ENABLE) {
-		/* The controller is enabled globally.
-		 * Run the pot state machines. */
+	if (hw_switch == ONOFF_SWITCHED_OFF) {
+		/* The hardware switch was just switched off. */
 
-		handle_pot(&cont.pots[cont.current_pot]);
-		cont.current_pot++;
-		if (cont.current_pot >= ARRAY_SIZE(cont.pots))
-			cont.current_pot = 0;
+		/* Stop everything. */
+		controller_reset();
+		return;
+	} else if (hw_switch == ONOFF_SWITCHED_ON) {
+		/* The hardware switch was just switched on. */
+
+		/* Clear all watchdogs and thus re-enable watering, if
+		 * watering was stopped due to watchdog. */
+		controller_watchdogs_clear();
+	} else if (hw_switch == ONOFF_IS_OFF) {
+		/* The hardware switch is turned off. */
+		return;
 	}
+
+	if (!(cont.config.global.flags & CONTR_FLG_ENABLE)) {
+		/* The global software switch is turned off. */
+		return;
+	}
+
+	/* The controller is enabled globally.
+	 * Run the pot state machines. */
+	handle_pot(&cont.pots[cont.current_pot]);
+	cont.current_pot++;
+	if (cont.current_pot >= ARRAY_SIZE(cont.pots))
+		cont.current_pot = 0;
 }
 
 /* Initialization of the controller data structures and hardware. */

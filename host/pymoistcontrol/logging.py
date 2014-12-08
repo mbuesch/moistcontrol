@@ -157,6 +157,7 @@ class LogItemInfo(LogItem):
 	LOG_INFO_DEBUG			= 0
 	LOG_INFO_CONTSTATCHG		= 1
 	LOG_INFO_WATERINGCHG		= 2
+	LOG_INFO_HWONOFF		= 3
 
 	def __init__(self, flags, timestamp, infoCode, infoData):
 		"""Class constructor."""
@@ -189,6 +190,9 @@ class LogItemInfo(LogItem):
 			return "Pot %d watering %s" % \
 				(potNumber + 1,
 				 "started" if state else "stopped")
+		elif self.infoCode == self.LOG_INFO_HWONOFF:
+			return "The hardware enable-switch was switched %s" %\
+				("ON" if (self.infoData & 0x01) else "OFF")
 		else:
 			return "Info message %d (%d)" %\
 				(self.infoCode, self.infoData)

@@ -3,6 +3,7 @@
 
 #include "util.h"
 #include "datetime.h"
+#include "onoffswitch.h"
 
 
 /* The maximum possible number of flower-pots. */
@@ -131,7 +132,7 @@ void controller_manual_mode(uint8_t force_stop_watering_mask,
 
 void controller_freeze(bool freeze);
 
-void controller_work(void);
+void controller_work(enum onoff_state hw_switch);
 void controller_init(void);
 
 #endif /* CONTROLLER_H_ */

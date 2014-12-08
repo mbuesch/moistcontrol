@@ -29,6 +29,7 @@ enum log_info {
 	LOG_INFO_DEBUG,			/* Generic debug message. */
 	LOG_INFO_CONTSTATCHG,		/* Controller status change */
 	LOG_INFO_WATERINGCHG,		/* The "watering" state changed. */
+	LOG_INFO_HWONOFF,		/* State of the hardware on/off-switch changed. */
 };
 
 /* Construct a 'sensor_data' field. */

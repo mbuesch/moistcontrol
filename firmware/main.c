@@ -28,6 +28,7 @@
 #include "pcf8574.h"
 #include "rv3029.h"
 #include "notify_led.h"
+#include "onoffswitch.h"
 
 #include <avr/io.h>
 #include <avr/wdt.h>
@@ -111,6 +112,8 @@ struct msg_payload {
 		} _packed manual_mode;
 	} _packed;
 } _packed;
+// TODO: add global state message with LED state
+// TODO: add global state message with hw switch state
 
 
 /* The current timekeeping count. */
@@ -357,17 +360,57 @@ static void handle_rtc(jiffies_t now)
 	rv3029_read_time();
 }
 
+/* Handle changes on the hardware on/off-switch state. */
+static enum onoff_state handle_onoffswitch(void)
+{
+	enum onoff_state hw_switch;
+	struct log_item log;
+
+	hw_switch = onoffswitch_get_state();
+
+	if (hw_switch == ONOFF_IS_OFF ||
+	    hw_switch == ONOFF_SWITCHED_OFF) {
+		/* The controller is off.
+		 * Enable notification LED permanently. */
+		notify_led_set(1);
+	}
+
+	if (hw_switch == ONOFF_SWITCHED_OFF) {
+		/* Log the 'off'-event. */
+		log_init(&log, LOG_INFO);
+		log.code = LOG_INFO_HWONOFF;
+		log.data = 0;
+		log_append(&log);
+
+	} else if (hw_switch == ONOFF_SWITCHED_ON) {
+		/* Log the 'on'-event. */
+		log_init(&log, LOG_INFO);
+		log.code = LOG_INFO_HWONOFF;
+		log.data = 1;
+		log_append(&log);
+
+		/* Disable notification LED.
+		 * This will also clear notification messages from other
+		 * sources (e.g. controller). */
+		notify_led_set(0);
+	}
+
+	return hw_switch;
+}
+
 /* Program entry point. */
 int main(void) _mainfunc;
 int main(void)
 {
 	jiffies_t now;
+	enum onoff_state hw_switch;
 
 	irq_disable();
 
-	wdt_enable(WDTO_120MS);
+	wdt_enable(WDTO_1S);
 
 	/* Initialize the system. */
+	onoffswitch_init();
 	notify_led_init();
 	twi_init();
 	systimer_init();
@@ -388,6 +431,9 @@ int main(void)
 		/* Get the current timestamp. */
 		now = jiffies_get();
 
+		/* Handle the state of the hardware on/off-switch. */
+		hw_switch = handle_onoffswitch();
+
 		/* Handle serial host communication. */
 		comm_work();
 		if (!time_before(now, comm_timer)) {
@@ -399,7 +445,7 @@ int main(void)
 		handle_rtc(now);
 
 		/* Run the controller state machine. */
-		controller_work();
+		controller_work(hw_switch);
 
 		/* Handle notification LED state. */
 		notify_led_work();

@@ -38,7 +38,7 @@ $Descr A3 16535 11693
 encoding utf-8
 Sheet 1 2
 Title "moistcontrol - lower board"
-Date "11 jan 2014"
+Date "29 nov 2014"
 Rev "1.0"
 Comp "Michael Buesch <m@bues.ch>"
 Comment1 ""
@@ -246,7 +246,6 @@ F 3 "~" H 13100 5000 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 NoConn ~ 4700 3800
-NoConn ~ 4700 3900
 NoConn ~ 4700 3100
 NoConn ~ 4700 3000
 $Comp
@@ -888,7 +887,7 @@ Text Notes 9250 4200 0    60   ~ 0
 sensor sensing line
 Text GLabel 6700 5450 0    59   Input ~ 0
 GND
-Text GLabel 6700 6150 0    59   Input ~ 0
+Text GLabel 6700 6200 0    59   Input ~ 0
 +5V
 Text Notes 7300 5500 0    51   ~ 0
 (Pin A1)
@@ -905,9 +904,9 @@ F0 "Upper board" 60
 F1 "moistcontrol_upper_board.sch" 60
 F2 "SCL" I L 6850 6750 60 
 F3 "SDA" I L 6850 6850 60 
-F4 "+5V_A" I L 6850 6150 60 
+F4 "+5V_A" I L 6850 6200 60 
 F5 "GND_B" I L 6850 5550 60 
-F6 "+5V_B" I L 6850 6250 60 
+F6 "+5V_B" I L 6850 6300 60 
 F7 "GND_A" I L 6850 5450 60 
 F8 "GND_D" I L 6850 5750 60 
 F9 "GND_C" I L 6850 5650 60 
@@ -927,6 +926,7 @@ F22 "V3" I R 9550 5650 60
 F23 "V4" I R 9550 5750 60 
 F24 "V5" I R 9550 5850 60 
 F25 "V6" I R 9550 5950 60 
+F26 "SW_ON" I L 6850 6100 60 
 $EndSheet
 Wire Wire Line
 	6700 5450 6850 5450
@@ -942,19 +942,19 @@ Wire Wire Line
 	6750 5750 6850 5750
 Connection ~ 6750 5650
 Wire Wire Line
-	6700 6150 6850 6150
+	6700 6200 6850 6200
 Wire Wire Line
-	6750 6150 6750 6250
+	6750 6200 6750 6300
 Wire Wire Line
-	6750 6250 6850 6250
-Connection ~ 6750 6150
+	6750 6300 6850 6300
+Connection ~ 6750 6200
 Text Notes 7300 5900 0    51   ~ 0
 (Pin A5)
 Text Notes 7300 6000 0    51   ~ 0
 (Pin A6)
-Text Notes 7300 6200 0    51   ~ 0
+Text Notes 7300 6250 0    51   ~ 0
 (Pin A9)
-Text Notes 7300 6300 0    51   ~ 0
+Text Notes 7300 6350 0    51   ~ 0
 (Pin A10)
 Text Notes 7300 6800 0    51   ~ 0
 (Pin A19)
@@ -1171,4 +1171,12 @@ Wire Wire Line
 	4850 4000 4700 4000
 Text Notes 2450 6800 0    60   ~ 0
 Notification-LED
+Text Notes 7300 6150 0    51   ~ 0
+(Pin A8)
+Wire Wire Line
+	4700 3900 4950 3900
+Wire Wire Line
+	4950 3900 4950 6100
+Wire Wire Line
+	4950 6100 6850 6100
 $EndSCHEMATC

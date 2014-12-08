@@ -38,7 +38,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 2 2
 Title "moistcontrol - upper board"
-Date "11 jan 2014"
+Date "29 nov 2014"
 Rev "1.0"
 Comp "Michael Buesch <m@bues.ch>"
 Comment1 ""
@@ -661,25 +661,25 @@ Text GLabel 1350 7250 2    59   Input ~ 0
 GND
 Wire Wire Line
 	1150 7250 1350 7250
-Text GLabel 2150 5200 2    60   Input ~ 0
+Text GLabel 2100 5650 2    60   Input ~ 0
 GND
-Text GLabel 1250 5200 0    60   Input ~ 0
+Text GLabel 1200 5650 0    60   Input ~ 0
 +5V
 $Comp
 L C C20
 U 1 1 5260D419
-P 1700 5200
-F 0 "C20" H 1750 5300 50  0000 L CNN
-F 1 "220µF" H 1750 5100 50  0000 L CNN
-F 2 "" H 1700 5200 60  0001 C CNN
-F 3 "" H 1700 5200 60  0001 C CNN
-	1    1700 5200
+P 1650 5650
+F 0 "C20" H 1700 5750 50  0000 L CNN
+F 1 "220µF" H 1700 5550 50  0000 L CNN
+F 2 "" H 1650 5650 60  0001 C CNN
+F 3 "" H 1650 5650 60  0001 C CNN
+	1    1650 5650
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	1250 5200 1500 5200
+	1200 5650 1450 5650
 Wire Wire Line
-	1900 5200 2150 5200
+	1850 5650 2100 5650
 Wire Wire Line
 	6300 2600 6300 2400
 Wire Wire Line
@@ -711,59 +711,59 @@ Wire Wire Line
 Wire Wire Line
 	1400 2200 1400 2000
 Connection ~ 1250 2200
-Text HLabel 1150 3900 0    60   Input ~ 0
+Text HLabel 1150 4600 0    60   Input ~ 0
 H-TxD
-Text HLabel 1150 4100 0    60   Input ~ 0
+Text HLabel 1150 4800 0    60   Input ~ 0
 H-RxD
 $Comp
 L DB9 J1
 U 1 1 526A6502
-P 2400 3900
-F 0 "J1" H 2400 4450 70  0000 C CNN
-F 1 "DB9" H 2400 3350 70  0000 C CNN
-F 2 "~" H 2400 3900 60  0000 C CNN
-F 3 "~" H 2400 3900 60  0000 C CNN
-	1    2400 3900
+P 2400 4600
+F 0 "J1" H 2400 5150 70  0000 C CNN
+F 1 "DB9" H 2400 4050 70  0000 C CNN
+F 2 "~" H 2400 4600 60  0000 C CNN
+F 3 "~" H 2400 4600 60  0000 C CNN
+	1    2400 4600
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	1150 4100 1950 4100
+	1150 4800 1950 4800
 Wire Wire Line
-	1150 3900 1950 3900
-Text Label 1400 3900 0    60   ~ 0
+	1150 4600 1950 4600
+Text Label 1400 4600 0    60   ~ 0
 Host TxD
-Text Label 1400 4100 0    60   ~ 0
+Text Label 1400 4800 0    60   ~ 0
 Host RxD
-NoConn ~ 1950 3600
-NoConn ~ 1950 3700
-NoConn ~ 1950 3800
-NoConn ~ 1950 4000
-NoConn ~ 1950 4200
 NoConn ~ 1950 4300
-Text GLabel 1600 3500 0    60   Input ~ 0
+NoConn ~ 1950 4400
+NoConn ~ 1950 4500
+NoConn ~ 1950 4700
+NoConn ~ 1950 4900
+NoConn ~ 1950 5000
+Text GLabel 1600 4200 0    60   Input ~ 0
 GND
 Wire Wire Line
-	1600 3500 1950 3500
-Text GLabel 2150 5650 2    60   Input ~ 0
+	1600 4200 1950 4200
+Text GLabel 2100 6100 2    60   Input ~ 0
 GND
-Text GLabel 1250 5650 0    60   Input ~ 0
+Text GLabel 1200 6100 0    60   Input ~ 0
 +12V
 $Comp
 L C C21
 U 1 1 528E0DC1
-P 1700 5650
-F 0 "C21" H 1750 5750 50  0000 L CNN
-F 1 "470µF" H 1750 5550 50  0000 L CNN
-F 2 "" H 1700 5650 60  0001 C CNN
-F 3 "" H 1700 5650 60  0001 C CNN
-	1    1700 5650
+P 1650 6100
+F 0 "C21" H 1700 6200 50  0000 L CNN
+F 1 "470µF" H 1700 6000 50  0000 L CNN
+F 2 "" H 1650 6100 60  0001 C CNN
+F 3 "" H 1650 6100 60  0001 C CNN
+	1    1650 6100
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	1250 5650 1500 5650
+	1200 6100 1450 6100
 Wire Wire Line
-	1900 5650 2150 5650
-Text Notes 800  3250 0    60   ~ 0
+	1850 6100 2100 6100
+Text Notes 800  3950 0    60   ~ 0
 Serial connector (host communication)
 Text Notes 7100 2300 0    60   ~ 0
 Valve 1
@@ -855,4 +855,25 @@ Text HLabel 9700 5800 2    60   Input ~ 0
 V6
 Text HLabel 9700 5400 0    60   Input ~ 0
 V6
+$Comp
+L SWITCH_INV SW1
+U 1 1 5479F354
+P 1800 3300
+F 0 "SW1" H 1600 3450 50  0000 C CNN
+F 1 "SWITCH_INV" H 1650 3150 50  0000 C CNN
+F 2 "~" H 1800 3300 60  0000 C CNN
+F 3 "~" H 1800 3300 60  0000 C CNN
+	1    1800 3300
+	1    0    0    -1  
+$EndComp
+Text Notes 800  3000 0    60   ~ 0
+On/off switch
+Text GLabel 2450 3400 2    60   Input ~ 0
+GND
+Text HLabel 1150 3300 0    60   Input ~ 0
+SW_ON
+Wire Wire Line
+	2300 3400 2450 3400
+Wire Wire Line
+	1150 3300 1300 3300
 $EndSCHEMATC
