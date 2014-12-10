@@ -364,7 +364,6 @@ static void handle_rtc(jiffies_t now)
 static enum onoff_state handle_onoffswitch(void)
 {
 	enum onoff_state hw_switch;
-	struct log_item log;
 
 	hw_switch = onoffswitch_get_state();
 

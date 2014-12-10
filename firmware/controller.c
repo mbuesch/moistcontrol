@@ -201,8 +201,6 @@ static void pot_remanent_state_commit_eeprom(struct flowerpot *pot)
 static void pot_info(struct flowerpot *pot,
 		     uint8_t log_class, uint8_t log_code, uint8_t log_data)
 {
-	struct log_item log;
-
 	if (!(pot_config(pot)->flags & POT_FLG_LOG)) {
 		/* Logging is disabled. Do not emit the message. */
 		return;
