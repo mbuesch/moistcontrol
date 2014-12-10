@@ -77,6 +77,10 @@ class GlobalConfigWidget(QWidget):
 			self.layout().addWidget(potStatWidget, y, 1)
 			y += 1
 
+		self.stateLabel = QLabel(self)
+		self.layout().addWidget(self.stateLabel, y, 0, 1, 2)
+		y += 1
+
 		self.advancedCheckBox = QCheckBox("Advanced", self)
 		self.layout().addWidget(self.advancedCheckBox, y, 0, 1, 2)
 		y += 1
@@ -163,6 +167,16 @@ class GlobalConfigWidget(QWidget):
 		self.highestSensorSpin.setValue(msg.sensor_highest_value)
 		self.__shouldCheckRtc = True
 		self.ignoreChanges -= 1
+
+	def handleGlobalStateMessage(self, msg):
+		text = []
+		if msg.flags & msg.CONTRSTAT_ONOFFSWITCH:
+			text.append("Hardware switch is on")
+		else:
+			text.append("Hardware switch is OFF")
+		if msg.flags & msg.CONTRSTAT_NOTIFLED:
+			text.append("Notification LED is ON")
+		self.stateLabel.setText("; ".join(text))
 
 	def handlePotStateMessage(self, msg):
 		self.ignoreChanges += 1

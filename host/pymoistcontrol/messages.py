@@ -30,6 +30,8 @@ class Message(SerialMessage):
 	MSG_CONTR_POT_REM_STATE_FETCH	= 11
 	MSG_MAN_MODE			= 12
 	MSG_MAN_MODE_FETCH		= 13
+	MSG_CONTR_STATE			= 14
+	MSG_CONTR_STATE_FETCH		= 15
 
 	@classmethod
 	def fromRawMessage(cls, rawMsg):
@@ -102,6 +104,10 @@ class Message(SerialMessage):
 						 flags = rawMsg.payload[4])
 			elif msgId == cls.MSG_MAN_MODE_FETCH:
 				msg = MsgManModeFetch()
+			elif msgId == cls.MSG_CONTR_STATE:
+				msg = MsgContrState(flags = rawMsg.payload[1])
+			elif msgId == cls.MSG_CONTR_STATE_FETCH:
+				msg = MsgContrStateFetch()
 			else:
 				raise Error("Unknown message ID: %d" % msgId)
 			msg.copyHeaderFrom(rawMsg)
@@ -477,6 +483,32 @@ class MsgManModeFetch(Message):
 
 	def getType(self):
 		return self.MSG_MAN_MODE_FETCH
+
+	def getPayload(self):
+		return bytes([ self.getType(), ])
+
+class MsgContrState(Message):
+	CONTRSTAT_ONOFFSWITCH	= 1 << 0
+	CONTRSTAT_NOTIFLED	= 1 << 1
+
+	def __init__(self,
+		     flags = 0):
+		self.flags = flags
+		Message.__init__(self)
+
+	def getType(self):
+		return self.MSG_CONTR_STATE
+
+	def getPayload(self):
+		return bytes([ self.getType(),
+			       self.flags, ])
+
+class MsgContrStateFetch(Message):
+	def __init__(self):
+		Message.__init__(self, fc = Message.COMM_FC_REQ_ACK)
+
+	def getType(self):
+		return self.MSG_CONTR_STATE_FETCH
 
 	def getPayload(self):
 		return bytes([ self.getType(), ])

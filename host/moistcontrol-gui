@@ -43,6 +43,7 @@ class MainWidget(QWidget):
 	serialDisconnected = Signal()
 
 	fetchCycle = [
+		"global_state",
 		"log",
 		"rtc",
 		"pot_state",
@@ -206,7 +207,9 @@ class MainWidget(QWidget):
 	def __fetchCycleNext(self):
 		action = self.fetchCycle[self.fetchCycleNumber]
 		try:
-			if action == "log":
+			if action == "global_state":
+				msg = MsgContrStateFetch()
+			elif action == "log":
 				msg = MsgLogFetch()
 			elif action == "rtc":
 				msg = MsgRtcFetch()
@@ -296,7 +299,10 @@ class MainWidget(QWidget):
 
 		advanceFetchCycle = True
 		action = self.fetchCycle[self.fetchCycleNumber]
-		if action == "log":
+		if action == "global_state":
+			if self.__checkRxMsg(msg, Message.MSG_CONTR_STATE):
+				self.globConfWidget.handleGlobalStateMessage(msg)
+		elif action == "log":
 			if self.__checkRxMsg(msg, Message.MSG_LOG,
 					     ignoreErrorCode = True):
 				if error == Message.COMM_ERR_OK:
