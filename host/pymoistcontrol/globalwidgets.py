@@ -40,6 +40,8 @@ class GlobalConfigWidget(QWidget):
 		self.setLayout(QGridLayout(self))
 		y = 0
 
+		self.__shouldCheckRtc = True
+
 		self.enableCheckBox = QCheckBox("Enable the regulator globally",
 						self)
 		self.layout().addWidget(self.enableCheckBox, y, 0, 1, 2)
@@ -159,6 +161,7 @@ class GlobalConfigWidget(QWidget):
 			self.enableCheckBox.setCheckState(Qt.Unchecked)
 		self.lowestSensorSpin.setValue(msg.sensor_lowest_value)
 		self.highestSensorSpin.setValue(msg.sensor_highest_value)
+		self.__shouldCheckRtc = True
 		self.ignoreChanges -= 1
 
 	def handlePotStateMessage(self, msg):
@@ -197,10 +200,30 @@ class GlobalConfigWidget(QWidget):
 	def handlePotEnableChange(self, potNumber, enabled):
 		self.statWidgets[potNumber].enableMessageHandling(enabled)
 
+	def __syncRtc(self):
+		# Sync RTC with PC clock.
+		self.rtcEditCheckBox.setCheckState(Qt.Unchecked)
+		self.rtcEdit.setDateTime(QDateTime.currentDateTime())
+		self.rtcEdited.emit()
+
 	def handleRtcMessage(self, msg):
 		self.ignoreChanges += 1
 		date = QDate(2000 + msg.year, msg.month + 1, msg.day + 1)
 		time = QTime(msg.hour, msg.minute, msg.second)
+		dateTime = QDateTime(date, time)
 		if self.rtcEdit.isReadOnly():
-			self.rtcEdit.setDateTime(QDateTime(date, time))
+			self.rtcEdit.setDateTime(dateTime)
+			if self.__shouldCheckRtc:
+				error = QDateTime.currentDateTime().secsTo(dateTime)
+				if abs(error) > 30:
+					res = QMessageBox.question(self,
+						"Fix RTC time drift?",
+						"The RTC is off by %d seconds.\n"
+						"Do you want to synchronize the RTC "
+						"with the PC's clock?" % error,
+						QMessageBox.Yes | QMessageBox.No,
+						QMessageBox.Yes)
+					if res == QMessageBox.Yes:
+						self.__syncRtc()
+				self.__shouldCheckRtc = False
 		self.ignoreChanges -= 1
