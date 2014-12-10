@@ -26,6 +26,7 @@
 #include "ioext.h"
 #include "log.h"
 #include "notify_led.h"
+#include "onoffswitch.h"
 
 #include <string.h>
 
@@ -827,12 +828,11 @@ void controller_freeze(bool freeze)
 	cont.freeze_timeout = jiffies_get() + sec_to_jiffies(5);
 }
 
-/* The main controller routine.
- * hw_switch: The state of the hardware on/off-switch.
- */
-void controller_work(enum onoff_state hw_switch)
+/* The main controller routine. */
+void controller_work(void)
 {
 	jiffies_t now = jiffies_get();
+	enum onoff_state hw_switch = onoffswitch_get_state();
 
 	if (cont.eeprom_update_required &&
 	    !time_before(now, cont.eeprom_update_time)) {

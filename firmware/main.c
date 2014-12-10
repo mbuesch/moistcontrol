@@ -55,6 +55,8 @@ enum user_message_id {
 	MSG_CONTR_POT_REM_STATE_FETCH,	/* Pot remanent state request */
 	MSG_MAN_MODE,			/* Manual mode settings */
 	MSG_MAN_MODE_FETCH,		/* Manual mode settings request */
+	MSG_CONTR_STATE,		/* Global state */
+	MSG_CONTR_STATE_FETCH,		/* Global state request */
 };
 
 enum man_mode_flags {
@@ -62,6 +64,11 @@ enum man_mode_flags {
 	MANFLG_FREEZE_ENABLE	= 1 << 1, /* Freeze on/off */
 	MANFLG_NOTIFY_CHANGE	= 1 << 2, /* LED-status change request */
 	MANFLG_NOTIFY_ENABLE	= 1 << 3, /* LED-status on/off */
+};
+
+enum contr_state_flags {
+	CONTRSTAT_ONOFFSWITCH	= 1 << 0, /* Hardware on/off-switch state. */
+	CONTRSTAT_NOTIFLED	= 1 << 1, /* Notification LED state. */
 };
 
 /* Payload of host communication messages. */
@@ -110,10 +117,13 @@ struct msg_payload {
 			uint8_t valve_manual_state;
 			uint8_t flags;
 		} _packed manual_mode;
+
+		/* Global controller state. */
+		struct {
+			uint8_t flags;
+		} _packed contr_state;
 	} _packed;
 } _packed;
-// TODO: add global state message with LED state
-// TODO: add global state message with hw switch state
 
 
 /* The current timekeeping count. */
@@ -300,6 +310,21 @@ bool comm_handle_rx_message(const struct comm_message *msg,
 
 		break;
 	}
+	case MSG_CONTR_STATE_FETCH: {
+		/* Fetch global state. */
+
+		enum onoff_state hw_switch;
+
+		reply->id = MSG_CONTR_STATE;
+		reply->contr_state.flags = 0;
+		hw_switch = onoffswitch_get_state();
+		if (hw_switch == ONOFF_IS_ON || hw_switch == ONOFF_SWITCHED_ON)
+			reply->contr_state.flags |= CONTRSTAT_ONOFFSWITCH;
+		if (notify_led_get())
+			reply->contr_state.flags |= CONTRSTAT_NOTIFLED;
+
+		break;
+	}
 	default:
 		/* Unsupported message. Return failure. */
 		return 0;
@@ -365,6 +390,7 @@ static enum onoff_state handle_onoffswitch(void)
 {
 	enum onoff_state hw_switch;
 
+	onoffswitch_work();
 	hw_switch = onoffswitch_get_state();
 
 	if (hw_switch == ONOFF_IS_OFF ||
@@ -395,7 +421,6 @@ int main(void) _mainfunc;
 int main(void)
 {
 	jiffies_t now;
-	enum onoff_state hw_switch;
 
 	irq_disable();
 
@@ -424,7 +449,7 @@ int main(void)
 		now = jiffies_get();
 
 		/* Handle the state of the hardware on/off-switch. */
-		hw_switch = handle_onoffswitch();
+		handle_onoffswitch();
 
 		/* Handle serial host communication. */
 		comm_work();
@@ -437,7 +462,7 @@ int main(void)
 		handle_rtc(now);
 
 		/* Run the controller state machine. */
-		controller_work(hw_switch);
+		controller_work();
 
 		/* Handle notification LED state. */
 		notify_led_work();

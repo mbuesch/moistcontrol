@@ -32,32 +32,22 @@
 #define ONOFFSWITCH_BIT			PD3
 
 /* Saved state. */
-static bool onoffswitch_state;
+static enum onoff_state onoffswitch_state = ONOFF_IS_OFF;
 /* Timestamp for the next check. */
 static jiffies_t next_check;
 
 
-/* Initialize the on/off-switch. */
-void onoffswitch_init(void)
+static void onoffswitch_eliminate_edge_states(void)
 {
-	ONOFFSWITCH_DDR &= ~(1 << ONOFFSWITCH_BIT);
-	ONOFFSWITCH_PORT |= (1 << ONOFFSWITCH_BIT);
-	_delay_ms(20); /* Wait for pull-up. */
+	if (onoffswitch_state == ONOFF_SWITCHED_ON)
+		onoffswitch_state = ONOFF_IS_ON;
+	else if (onoffswitch_state == ONOFF_SWITCHED_OFF)
+		onoffswitch_state = ONOFF_IS_OFF;
 }
 
-/* Get the on/off-switch state. */
-enum onoff_state onoffswitch_get_state(void)
+static void onoffswitch_update(void)
 {
 	bool new_state, old_state;
-	jiffies_t now = jiffies_get();
-
-	/* Debounce time. */
-	if (time_before(now, next_check)) {
-		if (onoffswitch_state)
-			return ONOFF_IS_ON;
-		return ONOFF_IS_OFF;
-	}
-	next_check = now + msec_to_jiffies(100);
 
 	/* Get the state. */
 	new_state = !!(ONOFFSWITCH_PIN & (1 << ONOFFSWITCH_BIT));
@@ -65,13 +55,42 @@ enum onoff_state onoffswitch_get_state(void)
 	new_state = !new_state;
 
 	/* Detect state and edges. */
-	old_state = onoffswitch_state;
-	onoffswitch_state = new_state;
+	old_state = (onoffswitch_state != ONOFF_IS_OFF);
 	if (new_state && !old_state)
-		return ONOFF_SWITCHED_ON;
-	if (!new_state && old_state)
-		return ONOFF_SWITCHED_OFF;
-	if (new_state)
-		return ONOFF_IS_ON;
-	return ONOFF_IS_OFF;
+		onoffswitch_state = ONOFF_SWITCHED_ON;
+	else if (!new_state && old_state)
+		onoffswitch_state = ONOFF_SWITCHED_OFF;
+	else if (new_state)
+		onoffswitch_state = ONOFF_IS_ON;
+	else
+		onoffswitch_state = ONOFF_IS_OFF;
+}
+
+/* Initialize the on/off-switch. */
+void onoffswitch_init(void)
+{
+	ONOFFSWITCH_DDR &= ~(1 << ONOFFSWITCH_BIT);
+	ONOFFSWITCH_PORT |= (1 << ONOFFSWITCH_BIT);
+	_delay_ms(20); /* Wait for pull-up. */
+	onoffswitch_update();
+	onoffswitch_eliminate_edge_states();
+}
+
+/* Periodic work. */
+void onoffswitch_work(void)
+{
+	jiffies_t now = jiffies_get();
+
+	onoffswitch_eliminate_edge_states();
+
+	if (!time_before(now, next_check)) {
+		next_check = now + msec_to_jiffies(100);
+		onoffswitch_update();
+	}
+}
+
+/* Get the on/off-switch state. */
+enum onoff_state onoffswitch_get_state(void)
+{
+	return onoffswitch_state;
 }

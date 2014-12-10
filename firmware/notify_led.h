@@ -5,6 +5,7 @@
 
 
 void notify_led_set(bool on);
+bool notify_led_get(void);
 
 void notify_led_work(void);
 void notify_led_init(void);

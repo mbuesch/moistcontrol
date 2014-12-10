@@ -68,6 +68,11 @@ void notify_led_set(bool on)
 	irq_restore(sreg);
 }
 
+bool notify_led_get(void)
+{
+	return led.state;
+}
+
 void notify_led_work(void)
 {
 	jiffies_t now = jiffies_get();

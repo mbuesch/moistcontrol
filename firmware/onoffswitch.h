@@ -9,6 +9,7 @@ enum onoff_state {
 };
 
 void onoffswitch_init(void);
+void onoffswitch_work(void);
 enum onoff_state onoffswitch_get_state();
 
 #endif /* ONOFFSWITCH_H_ */
