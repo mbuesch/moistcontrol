@@ -424,7 +424,7 @@ int main(void)
 
 	irq_disable();
 
-	wdt_enable(WDTO_1S);
+	wdt_enable(WDTO_2S);
 
 	/* Initialize the system. */
 	onoffswitch_init();
@@ -439,7 +439,8 @@ int main(void)
 	/* Sanity checks. */
 	build_assert(sizeof(struct msg_payload) <= COMM_PAYLOAD_LEN);
 
-	/* Enable interrupts and enter the mainloop. */
+	/* Enable watchdog, interrupts and enter the mainloop. */
+	wdt_enable(WDTO_250MS);
 	irq_enable();
 	while (1) {
 		/* Poke the watchdog. */
