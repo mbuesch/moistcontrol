@@ -151,10 +151,14 @@ class PotWidget(QWidget):
 		self.layout().addLayout(hbox, y, 1)
 		y += 1
 
+		label = QLabel("Force:", self)
+		self.layout().addWidget(label, y, 0)
 		hbox = QHBoxLayout()
-		self.forceOpenButton = QPushButton("Force-open valve", self)
+		self.forceOpenButton = QPushButton("&Open valve", self)
 		hbox.addWidget(self.forceOpenButton)
-		self.forceStopWateringButton = QPushButton("Force-stop watering", self)
+		self.forceStartMeasurement = QPushButton("&Trigger measurement", self)
+		hbox.addWidget(self.forceStartMeasurement)
+		self.forceStopWateringButton = QPushButton("&Stop watering", self)
 		self.forceStopWateringButton.setEnabled(False)
 		hbox.addWidget(self.forceStopWateringButton)
 		self.layout().addLayout(hbox, y, 1)
@@ -210,6 +214,7 @@ class PotWidget(QWidget):
 		self.endTime.timeChanged.connect(self.__endTimeChanged)
 		self.forceOpenButton.pressed.connect(self.__forceOpenPressed)
 		self.forceOpenButton.released.connect(self.__forceOpenReleased)
+		self.forceStartMeasurement.pressed.connect(self.__forceStartMeasPressed)
 		self.forceStopWateringButton.pressed.connect(self.__forceStopWaterPressed)
 		self.advancedCheckBox.stateChanged.connect(self.__advancedChanged)
 
@@ -224,6 +229,9 @@ class PotWidget(QWidget):
 
 	def forceOpenValveActive(self):
 		return self.forceOpenButton.isDown()
+
+	def forceStartMeasActive(self):
+		return self.forceStartMeasurement.isDown()
 
 	def forceStopWateringActive(self):
 		return self.forceStopWateringButton.isDown()
@@ -327,6 +335,10 @@ class PotWidget(QWidget):
 			self.manModeChanged.emit()
 
 	def __forceOpenReleased(self):
+		if not self.ignoreChanges:
+			self.manModeChanged.emit()
+
+	def __forceStartMeasPressed(self):
 		if not self.ignoreChanges:
 			self.manModeChanged.emit()
 

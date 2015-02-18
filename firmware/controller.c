@@ -799,23 +799,36 @@ void controller_update_pot_rem_state(uint8_t pot_number,
  * force_stop_watering_mask: A bitmask of pots to force-stop watering on.
  * valve_manual_mask: A bitmask of pots to enable manual valve control on.
  * valve_manual_state: A bitmask of manual-mode valve states.
+ * force_start_measurement_mask: A bitmask of pots to force-start measurement on.
  */
 void controller_manual_mode(uint8_t force_stop_watering_mask,
 			    uint8_t valve_manual_mask,
-			    uint8_t valve_manual_state)
+			    uint8_t valve_manual_state,
+			    uint8_t force_start_measurement_mask)
 {
 	struct flowerpot *pot;
+	const struct flowerpot_config *config;
 	uint8_t i, mask;
 
 	for (i = 0, mask = 1; i < MAX_NR_FLOWERPOTS; i++, mask <<= 1) {
 		pot = &cont.pots[i];
+		config = pot_config(pot);
 
 		if ((force_stop_watering_mask & mask) &&
 		    pot->state.is_watering)
 			pot_stop_watering(pot);
+
 		pot->valve_manual_en = !!(valve_manual_mask & mask);
 		pot->valve_manual_state = !!(valve_manual_state & mask);
 		valve_state_commit(pot);
+
+		if (force_start_measurement_mask & mask) {
+			/* Force measurement state, if enabled and idle. */
+			if (pot->state.state_id == POT_IDLE &&
+			    (config->flags & POT_FLG_ENABLED) &&
+			    !(pot->rem_state.flags & POT_REMFLG_WDTRIGGER))
+				pot_state_enter(pot, POT_START_MEASUREMENT);
+		}
 	}
 }
 

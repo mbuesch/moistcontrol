@@ -127,7 +127,8 @@ void controller_update_pot_rem_state(uint8_t pot_number,
 
 void controller_manual_mode(uint8_t force_stop_watering_mask,
 			    uint8_t valve_manual_mask,
-			    uint8_t valve_manual_state);
+			    uint8_t valve_manual_state,
+			    uint8_t force_start_measurement_mask);
 
 void controller_freeze(bool freeze);
 

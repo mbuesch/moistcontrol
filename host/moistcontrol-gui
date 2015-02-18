@@ -159,6 +159,8 @@ class MainWidget(QWidget):
 				if pot.forceOpenValveActive():
 					msg.valve_manual_mask |= 1 << i
 					msg.valve_manual_state |= 1 << i
+				if pot.forceStartMeasActive():
+					msg.force_start_measurement_mask |= 1 << i
 			self.serial.send(msg)
 		except SerialError as e:
 			self.__handleCommError(e)

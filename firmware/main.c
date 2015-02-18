@@ -116,6 +116,7 @@ struct msg_payload {
 			uint8_t valve_manual_mask;
 			uint8_t valve_manual_state;
 			uint8_t flags;
+			uint8_t force_start_measurement_mask;
 		} _packed manual_mode;
 
 		/* Global controller state. */
@@ -300,7 +301,8 @@ bool comm_handle_rx_message(const struct comm_message *msg,
 
 		controller_manual_mode(pl->manual_mode.force_stop_watering_mask,
 				       pl->manual_mode.valve_manual_mask,
-				       pl->manual_mode.valve_manual_state);
+				       pl->manual_mode.valve_manual_state,
+				       pl->manual_mode.force_start_measurement_mask);
 
 		if (pl->manual_mode.flags & MANFLG_FREEZE_CHANGE)
 			controller_freeze(!!(pl->manual_mode.flags & MANFLG_FREEZE_ENABLE));

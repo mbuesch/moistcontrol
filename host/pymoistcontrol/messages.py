@@ -460,11 +460,13 @@ class MsgManMode(Message):
 		     force_stop_watering_mask = 0,
 		     valve_manual_mask = 0,
 		     valve_manual_state = 0,
-		     flags = 0):
+		     flags = 0,
+		     force_start_measurement_mask = 0):
 		self.force_stop_watering_mask = force_stop_watering_mask
 		self.valve_manual_mask = valve_manual_mask
 		self.valve_manual_state = valve_manual_state
 		self.flags = flags
+		self.force_start_measurement_mask = force_start_measurement_mask
 		Message.__init__(self)
 
 	def getType(self):
@@ -475,7 +477,8 @@ class MsgManMode(Message):
 			       self.force_stop_watering_mask & 0xFF,
 			       self.valve_manual_mask & 0xFF,
 			       self.valve_manual_state & 0xFF,
-			       self.flags & 0xFF, ])
+			       self.flags & 0xFF,
+			       self.force_start_measurement_mask, ])
 
 class MsgManModeFetch(Message):
 	def __init__(self):
