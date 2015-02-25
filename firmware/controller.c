@@ -1,7 +1,7 @@
 /*
  * Moistcontrol - Controller state machine
  *
- * Copyright (c) 2013 Michael Buesch <m@bues.ch>
+ * Copyright (c) 2013-2015 Michael Buesch <m@bues.ch>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -407,6 +407,8 @@ static void pot_reset(struct flowerpot *pot)
 
 	/* Reset all state values. */
 	pot->state.is_watering = 0;
+	pot->state.last_measured_raw_value = 0;
+	pot->state.last_measured_value = 0;
 	pot->next_measurement = jiffies_get() + sec_to_jiffies(FIRST_CTRL_INTERVAL_SEC);
 	pot_state_enter(pot, POT_IDLE);
 	pot->valve_manual_en = 0;
