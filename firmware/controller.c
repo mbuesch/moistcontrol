@@ -395,8 +395,9 @@ static void pot_stop_watering(struct flowerpot *pot)
 
 /* Reset the state machine on one pot.
  * pot: A pointer to the flowerpot.
+ * clear_measured: Clear measured values?
  */
-static void pot_reset(struct flowerpot *pot)
+static void pot_reset(struct flowerpot *pot, bool clear_measured)
 {
 	if (pot->state.state_id == POT_MEASURING) {
 		/* We are currently measuring on this
@@ -407,8 +408,10 @@ static void pot_reset(struct flowerpot *pot)
 
 	/* Reset all state values. */
 	pot->state.is_watering = 0;
-	pot->state.last_measured_raw_value = 0;
-	pot->state.last_measured_value = 0;
+	if (clear_measured) {
+		pot->state.last_measured_raw_value = 0;
+		pot->state.last_measured_value = 0;
+	}
 	pot->next_measurement = jiffies_get() + sec_to_jiffies(FIRST_CTRL_INTERVAL_SEC);
 	pot_state_enter(pot, POT_IDLE);
 	pot->valve_manual_en = 0;
@@ -481,7 +484,7 @@ static void pot_watchdog_clear(struct flowerpot *pot)
 {
 	if (pot->rem_state.flags & POT_REMFLG_WDTRIGGER) {
 		pot->rem_state.flags &= ~POT_REMFLG_WDTRIGGER;
-		pot_reset(pot);
+		pot_reset(pot, 1);
 		pot_remanent_state_commit_eeprom(pot);
 	}
 }
@@ -698,7 +701,7 @@ static void controller_reset(void)
 	uint8_t i;
 
 	for (i = 0; i < ARRAY_SIZE(cont.pots); i++)
-		pot_reset(&cont.pots[i]);
+		pot_reset(&cont.pots[i], 1);
 	cont.current_pot = 0;
 }
 
@@ -737,7 +740,8 @@ void controller_update_config(const struct controller_config *new_config)
 				/* This pot changed.
 				 * Reset the pot's state machine.
 				 */
-				pot_reset(&cont.pots[i]);
+				pot_reset(&cont.pots[i],
+					  !(new_config->pots[i].flags & POT_FLG_ENABLED));
 			}
 		}
 	} else {
@@ -774,7 +778,7 @@ void controller_get_pot_state(uint8_t pot_number,
 }
 
 /* Update the remanent state on a given pot.
- * pot_number: The number of the pot to get the state for.
+ * pot_number: The number of the pot to set the state for.
  * rem_state: A pointer to the new remanent state.
  */
 void controller_update_pot_rem_state(uint8_t pot_number,
@@ -794,7 +798,7 @@ void controller_update_pot_rem_state(uint8_t pot_number,
 	pot->rem_state = *rem_state;
 	pot_remanent_state_commit_eeprom(pot);
 
-	pot_reset(pot);
+	pot_reset(pot, 0);
 }
 
 /* Set the "manual mode" control bits.
@@ -922,7 +926,7 @@ void controller_init(void)
 		pot = &cont.pots[i];
 
 		pot->nr = i;
-		pot_reset(pot);
+		pot_reset(pot, 1);
 
 		/* Read the remanent pot state. */
 		eeprom_read_block_wdtsafe(&pot->rem_state,
